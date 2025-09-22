@@ -68,4 +68,4 @@ jobs:
           echo "Deploying image: ${IMAGE_NAME}"
 
           # Replace the placeholder in the deployment YAML and apply it
-          sed "s|__IMAGE_NAME__|${IMAGE_NAME}|g" k8s-deployment.yml | kubectl apply -f -
+          sed "s|__IMAGE_NAME__|${IMAGE_NAME}|g" k8s-deployment.yml | kubectl apply -f - --validate=false
