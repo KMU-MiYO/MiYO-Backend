@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: miyo-backend-deployment
+  labels:
+    app: miyo-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: miyo-backend
+  template:
+    metadata:
+      labels:
+        app: miyo-backend
+    spec:
+      containers:
+      - name: miyo-backend
+        image: __IMAGE_NAME__
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://your-mysql-host:3306/MiYO?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true" # TODO: Change this to your database URL
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret # Assumes a secret named 'mysql-secret' exists
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret # Assumes a secret named 'mysql-secret' exists
+              key: password
