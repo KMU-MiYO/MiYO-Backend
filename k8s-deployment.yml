@@ -14,6 +14,8 @@ spec:
       labels:
         app: miyo-backend
     spec:
+      imagePullSecrets:
+        - name: miyobackend
       containers:
       - name: miyo-backend
         image: __IMAGE_NAME__
