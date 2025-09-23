@@ -70,8 +70,7 @@ jobs:
           # create-kubeconfig 명령으로 kubeconfig 파일을 동적으로 생성합니다.
           ncp-iam-authenticator create-kubeconfig \
             --clusterUuid ${{ secrets.NCP_K8S_CLUSTER_UUID }} \
-            --region KR \ 
-            --output ./kubeconfig.yml
+            --region KR --output ./kubeconfig.yml
           
           echo "Deploying image: ${{ env.IMAGE_NAME }}"
 
