@@ -33,4 +33,4 @@ spec:
           valueFrom:
             secretKeyRef:
               name: test-mysql-secret
-              key: password
+              key: root_password
