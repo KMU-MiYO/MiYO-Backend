@@ -27,10 +27,10 @@ spec:
         - name: SPRING_DATASOURCE_USERNAME
           valueFrom:
             secretKeyRef:
-              name: mysql-secret # Assumes a secret named 'mysql-secret' exists
+              name: test-mysql-secret
               key: username
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: mysql-secret # Assumes a secret named 'mysql-secret' exists
+              name: test-mysql-secret
               key: password
