@@ -16,6 +16,6 @@ FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
-COPY --from=builder /app/build/libs/MiYO-Backend-0.0.1-SNAPSHOT-plain.jar ./app.jar
+COPY --from=builder /app/build/libs/MiYO-Backend-0.0.1-SNAPSHOT.jar ./app.jar
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
