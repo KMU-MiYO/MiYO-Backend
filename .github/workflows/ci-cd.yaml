@@ -52,11 +52,19 @@ jobs:
           docker build -t $IMAGE_NAME .
           docker push $IMAGE_NAME
 
-      - name: Set up Kubeconfig
+      - name: Setup Ncloud CLI and Authenticate
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.NCP_K8S_KUBECONFIG_BASE64 }}" | base64 --decode > ~/.kube/config
-          chmod 600 ~/.kube/config
+          # ncloud CLI 설치
+          pip install ncloud
+          
+          # GitHub Secrets를 이용해 ncloud CLI 설정
+          ncloud configure set access_key ${{ secrets.NCP_ACCESS_KEY }}
+          ncloud configure set secret_key ${{ secrets.NCP_SECRET_ACCESS_KEY }}
+          ncloud configure set region KR
+          
+          # NKS 클러스터 정보를 가져와 kubeconfig 파일 업데이트
+          # --cluster-uuid 값은 NCP 콘솔에서 확인해야 합니다.
+          ncloud nks update-kubeconfig --cluster-uuid "84cbff81-75fd-4074-be33-45eedbb64178"
 
       - name: Deploy to Kubernetes
         run: |
