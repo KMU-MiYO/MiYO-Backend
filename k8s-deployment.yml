@@ -18,7 +18,7 @@ spec:
         - name: miyobackend
       containers:
       - name: miyo-backend
-        image: __IMAGE_NAME__
+        image: contest90-backend:1.0-test
         ports:
         - containerPort: 8080
         env:
