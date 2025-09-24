@@ -24,11 +24,8 @@ spec:
         env:
         - name: MYSQL_HOST
           value: "test-mysql-service"
-        - name: SPRING_DATASOURCE_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: test-mysql-secret
-              key: username
+        - name: DB_NAME
+          value: "test_db"
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
