@@ -30,4 +30,4 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build -x test # 테스트 코드는 빌드 시 제외하여 속도 향상
+        run: ./gradlew build
