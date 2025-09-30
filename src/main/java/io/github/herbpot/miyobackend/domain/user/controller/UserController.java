@@ -3,6 +3,11 @@ package io.github.herbpot.miyobackend.domain.user.controller;
 import io.github.herbpot.miyobackend.domain.user.dto.request.LoginRequest;
 import io.github.herbpot.miyobackend.domain.user.dto.request.SignUpRequest;
 import io.github.herbpot.miyobackend.domain.user.dto.request.UpdateUserRequest;
+import io.github.herbpot.miyobackend.domain.user.dto.request.EmailVerificationRequest;
+import io.github.herbpot.miyobackend.domain.user.dto.request.EmailVerificationConfirmRequest;
+import io.github.herbpot.miyobackend.domain.user.dto.request.FindIdRequest;
+import io.github.herbpot.miyobackend.domain.user.dto.request.PasswordResetRequest;
+import io.github.herbpot.miyobackend.domain.user.dto.request.PasswordResetConfirmRequest;
 import io.github.herbpot.miyobackend.domain.user.dto.response.TokenResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.UserInfoResponse;
 import io.github.herbpot.miyobackend.domain.user.service.UserService;
@@ -44,6 +49,47 @@ public class UserController {
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable String userId) {
         userService.deleteUser(userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        // For JWT, client-side token removal is usually sufficient.
+        // If server-side token invalidation (e.g., blacklisting) is required,
+        // additional logic would be added here.
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/email-verification-request")
+    public ResponseEntity<Void> requestEmailVerification(@RequestBody EmailVerificationRequest request) {
+        userService.sendVerificationCode(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/email-verification-confirm")
+    public ResponseEntity<Void> confirmEmailVerification(@RequestBody EmailVerificationConfirmRequest request) {
+        if (userService.verifyEmailCode(request.getEmail(), request.getCode())) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/find-id")
+    public ResponseEntity<Void> findId(@RequestBody FindIdRequest request) {
+        userService.findUserIdByEmail(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/password-reset-request")
+    public ResponseEntity<Void> requestPasswordReset(@RequestBody PasswordResetRequest request) {
+        userService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/password-reset-confirm")
+    public ResponseEntity<Void> confirmPasswordReset(@RequestParam String token, @RequestBody PasswordResetConfirmRequest request) {
+        userService.confirmPasswordReset(token, request.getNewPassword());
         return ResponseEntity.ok().build();
     }
 }

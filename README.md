@@ -25,13 +25,13 @@
 
 ### ✅ 체크리스트
 
-- [ ] Assignees / Labels / Milestone 선택
-- [ ]  로그인
-- [ ]  로그아웃
-- [ ]  회원 가입
-    - [ ] 이메일 인증코드 요청
-- [ ]  사용자 검증
-- [ ]  사용자 정보 조회
-- [ ]  계정 삭제
-- [ ]  회원정보 수정
-- [ ]  아이디 찾기 / 비밀번호 재설정
+- [x] Assignees / Labels / Milestone 선택 (N/A - Project Management Task)
+- [x]  로그인 (io.github.herbpot.miyobackend.domain.user.controller.UserController, io.github.herbpot.miyobackend.domain.user.service.UserService, io.github.herbpot.miyobackend.config.SecurityConfig, io.github.herbpot.miyobackend.global.jwt.JwtAuthenticationFilter, io.github.herbpot.miyobackend.global.jwt.JwtUtil)
+- [x]  로그아웃 (io.github.herbpot.miyobackend.domain.user.controller.UserController)
+- [x]  회원 가입 (io.github.herbpot.miyobackend.domain.user.controller.UserController, io.github.herbpot.miyobackend.domain.user.service.UserService)
+    - [x] 이메일 인증코드 요청 (io.github.herbpot.miyobackend.domain.user.controller.UserController, io.github.herbpot.miyobackend.domain.user.service.UserService, io.github.herbpot.miyobackend.global.mail.EmailService)
+- [x]  사용자 검증 (io.github.herbpot.miyobackend.global.jwt.JwtAuthenticationFilter, io.github.herbpot.miyobackend.global.jwt.JwtUtil, io.github.herbpot.miyobackend.config.SecurityConfig, io.github.herbpot.miyobackend.domain.user.service.CustomUserDetailsService)
+- [x]  사용자 정보 조회 (io.github.herbpot.miyobackend.domain.user.controller.UserController, io.github.herbpot.miyobackend.domain.user.service.UserService)
+- [x]  계정 삭제 (io.github.herbpot.miyobackend.domain.user.controller.UserController, io.github.herbpot.miyobackend.domain.user.service.UserService)
+- [x]  회원정보 수정 (io.github.herbpot.miyobackend.domain.user.controller.UserController, io.github.herbpot.miyobackend.domain.user.service.UserService)
+- [x]  아이디 찾기 / 비밀번호 재설정 (io.github.herbpot.miyobackend.domain.user.controller.UserController, io.github.herbpot.miyobackend.domain.user.service.UserService, io.github.herbpot.miyobackend.domain.user.repository.UserRepository, io.github.herbpot.miyobackend.global.mail.EmailService)

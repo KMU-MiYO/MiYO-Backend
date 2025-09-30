@@ -13,6 +13,7 @@ public class SignUpRequest {
     private String email;
     private String password;
     private String profilePicture;
+    private String code; // Add verification code field
 
     public User toEntity(String encodedPassword) {
         return User.of(nickname, userId, email, encodedPassword, profilePicture);

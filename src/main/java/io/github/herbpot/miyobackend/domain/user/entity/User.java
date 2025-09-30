@@ -2,10 +2,8 @@ package io.github.herbpot.miyobackend.domain.user.entity;
 
 import io.github.herbpot.miyobackend.domain.user.dto.request.UpdateUserRequest;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 
@@ -29,6 +27,7 @@ public class User {
     @Column(nullable = false)
     private String email;
 
+    @Setter
     @Column(nullable = false)
     private String password;
 
@@ -37,8 +36,12 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    private String passwordResetToken;
+
+    private LocalDateTime passwordResetTokenExpiryDate;
+
     public static User of(String nickname, String userId, String email, String password, String profilePicture) {
-        return new User(null, nickname, userId, email, password, profilePicture, LocalDateTime.now());
+        return new User(null, nickname, userId, email, password, profilePicture, LocalDateTime.now(), null, null);
     }
 
     public void update(UpdateUserRequest request) {
@@ -49,4 +52,15 @@ public class User {
             this.profilePicture = request.getProfilePicture();
         }
     }
+
+    public void createPasswordResetToken(String token) {
+        this.passwordResetToken = token;
+        this.passwordResetTokenExpiryDate = LocalDateTime.now().plusHours(1); // Token valid for 1 hour
+    }
+
+    public void resetPassword() {
+        this.passwordResetToken = null;
+        this.passwordResetTokenExpiryDate = null;
+    }
+
 }
