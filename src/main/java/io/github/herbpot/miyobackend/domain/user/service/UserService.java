@@ -12,9 +12,12 @@ import io.github.herbpot.miyobackend.global.mail.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -32,6 +35,7 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectStorageService objectStorageService;
 
     @Value("${miyobackend.frontend.password-reset-url}")
     private String frontendPasswordResetUrl;
@@ -69,7 +73,8 @@ public class UserService {
 
         // 3. 사용자 등록
         String encodedPassword = passwordEncoder.encode(request.getPassword());
-        User user = request.toEntity(encodedPassword);
+        String imagePath = objectStorageService.uploadFile(request.getProfileImage());
+        User user = request.toEntity(encodedPassword, imagePath);
         userRepository.save(user);
     }
 
@@ -134,6 +139,16 @@ public class UserService {
     public void updateUser(String userId, UpdateUserRequest request) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자입니다."));
+        MultipartFile profileImageFile = request.getProfileImage();
+        if (profileImageFile != null && !profileImageFile.isEmpty()) {
+            objectStorageService.removeFile(user.getProfilePicture());
+
+            // 새 이미지 업로드 후 URL 반환
+            String profileImageUrl = objectStorageService.uploadFile(profileImageFile);
+            user.updateProfileImageUrl(profileImageUrl);
+        }
+
+        // 2. 나머지 사용자 정보 업데이트
         user.update(request);
     }
 
@@ -206,5 +221,13 @@ public class UserService {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            throw new IllegalStateException("인증 정보가 존재하지 않습니다.");
+        }
+        return authentication.getName();
     }
 }

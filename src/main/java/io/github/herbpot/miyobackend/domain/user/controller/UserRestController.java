@@ -13,6 +13,7 @@ import io.github.herbpot.miyobackend.domain.user.dto.response.UserInfoResponse;
 import io.github.herbpot.miyobackend.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,8 +24,8 @@ public class UserRestController {
 
     private final UserService userService;
 
-    @PostMapping("/signup")
-    public ResponseEntity<Void> signUp(@RequestBody SignUpRequest request) {
+    @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> signUp(@ModelAttribute SignUpRequest request) {
         userService.signUp(request);
         return ResponseEntity.ok().build();
     }
@@ -41,8 +42,8 @@ public class UserRestController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{userId}")
-    public ResponseEntity<Void> updateUser(@PathVariable String userId, @RequestBody UpdateUserRequest request) {
+    @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateUser(@PathVariable String userId, @ModelAttribute UpdateUserRequest request ) {
         userService.updateUser(userId, request);
         return ResponseEntity.ok().build();
     }

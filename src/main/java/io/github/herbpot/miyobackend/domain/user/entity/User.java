@@ -51,9 +51,10 @@ public class User {
         if (request.getNickname() != null) {
             this.nickname = request.getNickname();
         }
-        if (request.getProfilePicture() != null) {
-            this.profilePicture = request.getProfilePicture();
-        }
+    }
+
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profilePicture = profileImageUrl;
     }
 
     public void createPasswordResetToken(String token, LocalDateTime expireDate) {
