@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: miyo-backend-deployment
+  name: miyo-backend-user-deployment
   labels:
-    app: miyo-backend
+    app: miyo-backend-user
 spec:
   replicas: 1
   strategy:
@@ -13,26 +13,41 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: miyo-backend
+      app: miyo-backend-user
   template:
     metadata:
       labels:
-        app: miyo-backend
+        app: miyo-backend-user
     spec:
       imagePullSecrets:
         - name: miyobackend
       containers:
-      - name: miyo-backend
-        image: contest90.kr.ncr.ntruss.com/contest90-backend:1.0-test
+      - name: miyo-backend-user
+        image: contest90.kr.ncr.ntruss.com/contest90-backend:user-1.0
         ports:
         - containerPort: 8080
         env:
         - name: MYSQL_HOST
-          value: "test-mysql-service"
+          value: "user-mysql-service"
         - name: DB_NAME
-          value: "test_db"
+          value: "user_db"
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: BACKEND_URL
+          valueFrom:
+            secretKeyRef:
+              name: url-secret
+              key: url
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: test-mysql-secret
+              name: user-mysql-secret
               key: root_password
+        - name: MAIL_PW
+          valueFrom:
+            secretKeyRef:
+              name: mail-secret
+              key: mail_pw
+

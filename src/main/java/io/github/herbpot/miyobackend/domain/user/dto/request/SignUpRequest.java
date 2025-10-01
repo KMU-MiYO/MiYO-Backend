@@ -1,5 +1,6 @@
 package io.github.herbpot.miyobackend.domain.user.dto.request;
 
+import io.github.herbpot.miyobackend.config.Authoriy;
 import io.github.herbpot.miyobackend.domain.user.entity.User;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,9 +14,8 @@ public class SignUpRequest {
     private String email;
     private String password;
     private String profilePicture;
-    private String code; // Add verification code field
 
     public User toEntity(String encodedPassword) {
-        return User.of(nickname, userId, email, encodedPassword, profilePicture);
+        return User.of(nickname, userId, email, encodedPassword, profilePicture, Authoriy.ROLE_USER);
     }
 }

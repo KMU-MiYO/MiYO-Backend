@@ -1,9 +1,9 @@
 package io.github.herbpot.miyobackend.domain.user.entity;
 
+import io.github.herbpot.miyobackend.config.Authoriy;
 import io.github.herbpot.miyobackend.domain.user.dto.request.UpdateUserRequest;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 
@@ -40,8 +40,11 @@ public class User {
 
     private LocalDateTime passwordResetTokenExpiryDate;
 
-    public static User of(String nickname, String userId, String email, String password, String profilePicture) {
-        return new User(null, nickname, userId, email, password, profilePicture, LocalDateTime.now(), null, null);
+    @Enumerated(EnumType.STRING)
+    private Authoriy authority;
+
+    public static User of(String nickname, String userId, String email, String password, String profilePicture, Authoriy authority) {
+        return new User(null, nickname, userId, email, password, profilePicture, LocalDateTime.now(), null, null, authority);
     }
 
     public void update(UpdateUserRequest request) {
@@ -53,9 +56,9 @@ public class User {
         }
     }
 
-    public void createPasswordResetToken(String token) {
+    public void createPasswordResetToken(String token, LocalDateTime expireDate) {
         this.passwordResetToken = token;
-        this.passwordResetTokenExpiryDate = LocalDateTime.now().plusHours(1); // Token valid for 1 hour
+        this.passwordResetTokenExpiryDate = expireDate; // Token valid for 1 hour
     }
 
     public void resetPassword() {
