@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: miyo-backend-service
+  name: miyo-backend-user-service
 spec:
   selector:
-    app: miyo-backend
+    app: miyo-backend-user
   ports:
     - protocol: TCP
       port: 80
       targetPort: 8080
-  type: ClusterIP
+  type: NodePort
