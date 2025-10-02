@@ -50,4 +50,18 @@ spec:
             secretKeyRef:
               name: mail-secret
               key: mail_pw
+        - name: NCP_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ncp-secret
+              key: ak
+        - name: NCP_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ncp-secret
+              key: sk
+        - name: NCP_BUCKET_NAME
+          value: contest90-image-bucket
+
+
 

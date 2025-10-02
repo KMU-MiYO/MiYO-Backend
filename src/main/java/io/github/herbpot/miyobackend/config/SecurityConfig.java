@@ -42,9 +42,10 @@ public class SecurityConfig {
                                 "/password/reset"
                         ).permitAll()
                         .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/",
+                                "/dev/users/swagger-ui.html",
+                                "/dev/users/swagger-ui/**",
+                                "/dev/users/v3/api-docs/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
