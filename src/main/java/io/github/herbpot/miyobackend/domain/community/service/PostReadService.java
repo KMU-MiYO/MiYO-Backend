@@ -28,7 +28,7 @@ public class PostReadService {
     private final PostReadRepository postReadRepository;
     private final EmpathyRepository empathyRepository;
     private final RegionBoundaryService regionBoundaryService;
-    private final io.github.herbpot.miyobackend.domain.user.repository.UserRepository userRepository;
+    private final io.github.herbpot.miyobackend.domain.user.repository_test_folder.UserRepository userRepository;
 
     /**
      * 기본 검색 반경 (km)
