@@ -21,9 +21,22 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.lettuce:lettuce-core'
+
+    // Hibernate Spatial: MySQL Spatial 데이터 타입 지원
+    implementation 'org.hibernate.orm:hibernate-spatial'
+
+    // JTS (Java Topology Suite): Spatial 데이터 타입 (Point, Polygon 등) 제공
+    implementation 'org.locationtech.jts:jts-core:1.19.0'
+
+    implementation 'com.mysql:mysql-connector-j'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'com.mysql:mysql-connector-j'
 }
 
 tasks.named('test') {
