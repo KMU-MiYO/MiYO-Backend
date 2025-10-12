@@ -3,7 +3,7 @@ package io.github.herbpot.miyobackend.domain.community.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
 import io.github.herbpot.miyobackend.domain.community.entity.PostReadModel;
-import io.github.herbpot.miyobackend.domain.community.repository.PostReadRepository;
+import io.github.herbpot.miyobackend.domain.community.repository.read.PostReadRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -41,7 +41,7 @@ public class RedisEventSubscriber {
      *
      * @param message Redis에서 수신한 JSON 메시지
      */
-    @Transactional
+    @Transactional("readTransactionManager")
     public void handleMessage(String message) {
         try {
             log.info("Received Redis message: {}", message);
@@ -91,6 +91,7 @@ public class RedisEventSubscriber {
         PostReadModel readModel = PostReadModel.builder()
                 .postId(event.getPostId())
                 .userId(event.getUserId())
+                .userNickname(event.getUserNickname())
                 .parentPostId(event.getParentPostId())
                 .imagePath(event.getImagePath())
                 .location(location)

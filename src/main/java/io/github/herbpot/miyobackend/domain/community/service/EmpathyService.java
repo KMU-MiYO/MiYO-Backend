@@ -1,7 +1,7 @@
 package io.github.herbpot.miyobackend.domain.community.service;
 
 import io.github.herbpot.miyobackend.domain.community.entity.EmpathyData;
-import io.github.herbpot.miyobackend.domain.community.repository.EmpathyRepository;
+import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,8 +27,8 @@ public class EmpathyService {
      * @param postId 게시글 ID
      * @return true: 공감 추가됨, false: 공감 삭제됨
      */
-    @Transactional
-    public boolean toggleEmpathy(Long userId, Long postId) {
+    @Transactional("readTransactionManager")
+    public boolean toggleEmpathy(String userId, Long postId) {
         log.info("Toggling empathy: userId={}, postId={}", userId, postId);
 
         // 기존 공감 확인

@@ -47,7 +47,12 @@ public class PostEvent implements Serializable {
     /**
      * 작성자 ID
      */
-    private Long userId;
+    private String userId;
+
+    /**
+     * 작성자 닉네임
+     */
+    private String userNickname;
 
     /**
      * 부모 게시글 ID
@@ -92,11 +97,12 @@ public class PostEvent implements Serializable {
     /**
      * Post Entity로부터 CREATE 이벤트 생성
      */
-    public static PostEvent createEvent(Post post) {
+    public static PostEvent createEvent(Post post, String userNickname) {
         return PostEvent.builder()
                 .eventType(EventType.CREATE)
                 .postId(post.getPostId())
                 .userId(post.getUserId())
+                .userNickname(userNickname)
                 .parentPostId(post.getParentPostId())
                 .imagePath(post.getImagePath())
                 .latitude(post.getLatitude())

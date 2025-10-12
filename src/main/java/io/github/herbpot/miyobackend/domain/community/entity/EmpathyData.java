@@ -39,7 +39,7 @@ public class EmpathyData {
      * - User 테이블 참조 (ForeignKey)
      */
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private String userId;
 
     /**
      * 게시글 ID
@@ -56,7 +56,7 @@ public class EmpathyData {
     private LocalDateTime createdAt;
 
     @Builder
-    public EmpathyData(Long userId, Long postId) {
+    public EmpathyData(String userId, Long postId) {
         this.userId = userId;
         this.postId = postId;
     }
