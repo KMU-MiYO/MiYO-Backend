@@ -2,9 +2,10 @@ package io.github.herbpot.miyobackend.global.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -15,8 +16,15 @@ import java.util.Date;
 public class JwtUtil {
 
     // NOTE: In a real application, this secret key should be loaded from an external configuration file.
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private final Key secretKey;
     private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hour
+
+    public JwtUtil(
+            @Value("${jwt.secret}") String key
+    ) {
+        byte[] keyBytes = Decoders.BASE64.decode(key);
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
+    }
 
     public String generateToken(String userId) {
         Date now = new Date();
