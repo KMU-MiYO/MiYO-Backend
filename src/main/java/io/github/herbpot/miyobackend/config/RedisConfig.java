@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -31,6 +32,12 @@ public class RedisConfig {
     @Value("${app.redis.topic.post-events:post-events-channel}")
     private String postEventsTopic;
 
+    @Value("${spring.data.redis.host}")
+    private String host;
+
+    @Value("${spring.data.redis.port}")
+    private String port;
+
     /**
      * ObjectMapper 빈 생성
      * - JavaTimeModule: LocalDateTime 등의 Java 8 날짜/시간 타입 직렬화 지원
@@ -51,12 +58,11 @@ public class RedisConfig {
      */
     @Bean
     public RedisTemplate<String, PostEvent> redisTemplate(
-            RedisConnectionFactory connectionFactory,
             ObjectMapper objectMapper) {
 
         RedisTemplate<String, PostEvent> template = new RedisTemplate<>();
+        RedisConnectionFactory connectionFactory = new LettuceConnectionFactory(host, Integer.parseInt(port));
         template.setConnectionFactory(connectionFactory);
-
         // Key Serializer: String
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         template.setKeySerializer(stringSerializer);

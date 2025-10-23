@@ -49,6 +49,11 @@ spec:
               name: posts-read-mysql-secret
               key: root_password
 
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+
         # JWT Configuration
         - name: jwtSecret
           valueFrom:
