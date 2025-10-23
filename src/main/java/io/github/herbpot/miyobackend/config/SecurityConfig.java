@@ -48,6 +48,13 @@ public class SecurityConfig {
 
                         // 게시글 조회 API는 인증 선택 (인증 없이도 가능, 있으면 공감 여부 확인)
                         .requestMatchers("/v0/posts/cord", "/v0/posts/id", "/v0/posts/top3").permitAll()
+                        //swagger용 라우터
+                        .requestMatchers(
+                                "/",
+                                "/dev/users/swagger-ui.html",
+                                "/dev/users/swagger-ui/**",
+                                "/dev/users/v3/api-docs/**"
+                        ).permitAll()
 
                         // 나머지 API는 인증 필요
                         .anyRequest().authenticated()
