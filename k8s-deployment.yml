@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: miyo-backend-deployment
+  name: miyo-backend-posts-deployment
   labels:
-    app: miyo-backend
+    app: miyo-backend-posts
 spec:
   replicas: 1
   strategy:
@@ -13,16 +13,16 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: miyo-backend
+      app: miyo-backend-posts
   template:
     metadata:
       labels:
-        app: miyo-backend
+        app: miyo-backend-posts
     spec:
       imagePullSecrets:
         - name: miyobackend
       containers:
-      - name: miyo-backend
+      - name: miyo-backend-posts
         image: contest90.kr.ncr.ntruss.com/contest90-backend:posts-1.0
         ports:
         - containerPort: 8080
