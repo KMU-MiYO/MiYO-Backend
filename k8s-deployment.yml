@@ -31,22 +31,22 @@ spec:
         - name: WRITE_MYSQL_HOST
           value: "post-write-mysql-service"
         - name: WRITE_DB_NAME
-          value: "posts_write_db"
+          value: "post_write_db"
         - name: WRITE_MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: posts-write-mysql-secret
+              name: post-write-mysql-secret
               key: root_password
 
         # Read DB Configuration
         - name: READ_MYSQL_HOST
           value: "post-read-mysql-service"
         - name: READ_DB_NAME
-          value: "posts_read_db"
+          value: "post_read_db"
         - name: READ_MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: posts-read-mysql-secret
+              name: post-read-mysql-secret
               key: root_password
 
         - name: REDIS_HOST
