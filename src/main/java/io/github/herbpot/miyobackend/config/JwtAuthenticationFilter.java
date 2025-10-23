@@ -41,12 +41,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // permitAll 경로는 JWT 검증 없이 통과 (선택적 인증)
         boolean isPublicEndpoint = requestURI.startsWith("/actuator/")
-                || requestURI.startsWith("/swagger-ui/")
-                || requestURI.startsWith("/v3/api-docs/")
-                || requestURI.equals("/swagger-ui.html")
+                || requestURI.startsWith("/dev/posts/swagger-ui/")
+                || requestURI.startsWith("/dev/posts/v3/api-docs/")
+                || requestURI.equals("/dev/posts/swagger-ui.html")
                 || requestURI.equals("/v0/posts/cord")
                 || requestURI.equals("/v0/posts/id")
-                || requestURI.equals("/v0/posts/top3");
+                || requestURI.equals("/v0/posts/top3")
+                || requestURI.equals("/");
 
         if (isPublicEndpoint) {
             log.debug("JWT Filter - Public endpoint, attempting optional authentication: {}", requestURI);
