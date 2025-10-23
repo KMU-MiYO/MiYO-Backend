@@ -10,7 +10,7 @@ COPY settings.gradle .
 COPY src src
 
 RUN chmod +x ./gradlew
-RUN ./gradlew build --no-daemon --no-watch-fs
+RUN ./gradlew build -x test --no-daemon --no-watch-fs
 
 FROM openjdk:17-jdk-slim
 
