@@ -29,7 +29,7 @@ spec:
         env:
         # Write DB Configuration
         - name: WRITE_MYSQL_HOST
-          value: "posts-write-mysql-service"
+          value: "post-write-mysql-service"
         - name: WRITE_DB_NAME
           value: "posts_write_db"
         - name: WRITE_MYSQL_PASSWORD
@@ -40,7 +40,7 @@ spec:
 
         # Read DB Configuration
         - name: READ_MYSQL_HOST
-          value: "posts-read-mysql-service"
+          value: "post-read-mysql-service"
         - name: READ_DB_NAME
           value: "posts_read_db"
         - name: READ_MYSQL_PASSWORD
