@@ -51,9 +51,9 @@ public class SecurityConfig {
                         //swagger용 라우터
                         .requestMatchers(
                                 "/",
-                                "/dev/users/swagger-ui.html",
-                                "/dev/users/swagger-ui/**",
-                                "/dev/users/v3/api-docs/**"
+                                "/dev/posts/swagger-ui.html",
+                                "/dev/posts/swagger-ui/**",
+                                "/dev/posts/v3/api-docs/**"
                         ).permitAll()
 
                         // 나머지 API는 인증 필요
