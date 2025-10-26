@@ -38,7 +38,7 @@ public class Post {
      * - User 테이블의 id 참조 (Foreign Key)
      */
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private String userId;
 
     /**
      * 부모 게시글 ID
@@ -97,7 +97,7 @@ public class Post {
      * - location은 GeometryFactory를 통해 생성된 Point 객체를 받음
      */
     @Builder
-    public Post(Long userId, Long parentPostId, String imagePath,
+    public Post(String userId, Long parentPostId, String imagePath,
                 Point location, PostCategory category, String title, String content) {
         this.userId = userId;
         this.parentPostId = parentPostId;
@@ -122,5 +122,14 @@ public class Post {
      */
     public double getLongitude() {
         return location.getX();
+    }
+
+    /**
+     * 논리 삭제 (Soft Delete)
+     * - userId를 '탈퇴한 사용자'로 변경
+     * - 실제 데이터는 삭제하지 않음
+     */
+    public void softDelete() {
+        this.userId = "탈퇴한 사용자";
     }
 }

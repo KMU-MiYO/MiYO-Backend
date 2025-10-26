@@ -1,4 +1,4 @@
-package io.github.herbpot.miyobackend.domain.community.repository;
+package io.github.herbpot.miyobackend.domain.community.repository.read;
 
 import io.github.herbpot.miyobackend.domain.community.entity.PostReadModel;
 import org.springframework.data.domain.Page;
@@ -13,6 +13,7 @@ import java.util.Optional;
 /**
  * PostReadRepository (Read Model Repository)
  * - posts_read 테이블에 대한 JPA Repository
+ * - Read DB 사용
  * - 게시글 조회 전용 (CQRS Read Model)
  * - MySQL Spatial Function을 활용한 위치 기반 검색
  */
@@ -48,4 +49,15 @@ public interface PostReadRepository extends JpaRepository<PostReadModel, Long> {
      * @return 게시글 상세 정보
      */
     Optional<PostReadModel> findByPostId(Long postId);
+
+    /**
+     * 부모 게시글 ID로 댓글 목록 조회
+     * - parentPostId가 일치하는 댓글들만 조회
+     * - 최신순으로 정렬
+     *
+     * @param parentPostId 부모 게시글 ID
+     * @param pageable 페이징 정보
+     * @return 댓글 목록 (페이징)
+     */
+    Page<PostReadModel> findByParentPostIdOrderByCreatedAtDesc(Long parentPostId, Pageable pageable);
 }

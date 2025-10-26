@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 게시글 상세 조회 응답 DTO
@@ -82,11 +83,21 @@ public class PostDetailResponse {
     private Boolean isEmpathized;
 
     /**
+     * 댓글 목록 (트리 구조)
+     * - 해당 게시글의 댓글들
+     * - 최신순으로 정렬
+     * - 대댓글 포함 (최대 2단계: 댓글 -> 대댓글)
+     * - 제외 항목: 위치 정보, 제목, 이미지, 카테고리
+     */
+    private List<CommentResponse> comments;
+
+    /**
      * PostReadModel로부터 PostDetailResponse 생성
      * - 모든 필드 포함
      * - nickname은 별도로 User 테이블에서 조회하여 전달
+     * - comments는 별도로 조회하여 트리 구조로 전달
      */
-    public static PostDetailResponse from(PostReadModel readModel, String nickname, Long empathyCount, Boolean isEmpathized) {
+    public static PostDetailResponse from(PostReadModel readModel, String nickname, Long empathyCount, Boolean isEmpathized, List<CommentResponse> comments) {
         return PostDetailResponse.builder()
                 .postId(readModel.getPostId())
                 .nickname(nickname)
@@ -100,6 +111,7 @@ public class PostDetailResponse {
                 .createdAt(readModel.getCreatedAt())
                 .empathyCount(empathyCount != null ? empathyCount : 0L)
                 .isEmpathized(isEmpathized != null ? isEmpathized : false)
+                .comments(comments != null ? comments : List.of())
                 .build();
     }
 }

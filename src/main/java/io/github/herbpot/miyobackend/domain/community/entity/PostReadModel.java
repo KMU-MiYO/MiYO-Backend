@@ -43,7 +43,15 @@ public class PostReadModel {
      * - User 테이블의 id 참조 (Foreign Key)
      */
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private String userId;
+
+    /**
+     * 작성자 닉네임
+     * - 조회 성능 최적화를 위한 비정규화 필드
+     * - User Service에서 가져온 닉네임 저장
+     */
+    @Column(name = "user_nickname", nullable = false, length = 50)
+    private String userNickname;
 
     /**
      * 부모 게시글 ID
@@ -106,12 +114,13 @@ public class PostReadModel {
      * - Redis 이벤트 구독 시 PostEvent로부터 데이터를 받아 생성
      */
     @Builder
-    public PostReadModel(Long postId, Long userId, Long parentPostId,
+    public PostReadModel(Long postId, String userId, String userNickname, Long parentPostId,
                          String imagePath, Point location, PostCategory category,
                          String title, String content, LocalDateTime createdAt,
                          Integer empathyCount) {
         this.postId = postId;
         this.userId = userId;
+        this.userNickname = userNickname;
         this.parentPostId = parentPostId;
         this.imagePath = imagePath;
         this.location = location;

@@ -10,18 +10,12 @@ import lombok.NoArgsConstructor;
  * 게시글 작성 요청 DTO
  * - POST /v0/posts API의 Request Body
  * - Validation 어노테이션을 통한 입력값 검증
+ * - userId는 JWT에서 추출하여 설정됨 (클라이언트에서 전송 불필요)
  */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostCreateRequest {
-
-    /**
-     * 작성자 ID
-     * - User 테이블의 id 값
-     */
-    @NotNull(message = "사용자 ID는 필수입니다.")
-    private Long userId;
 
     /**
      * 부모 게시글 ID

@@ -6,6 +6,11 @@ metadata:
     app: miyo-backend
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: miyo-backend
@@ -18,16 +23,39 @@ spec:
         - name: miyobackend
       containers:
       - name: miyo-backend
-        image: contest90-backend:1.0-test
+        image: contest90.kr.ncr.ntruss.com/contest90-backend:posts-1.0
         ports:
         - containerPort: 8080
         env:
-        - name: MYSQL_HOST
-          value: "test-mysql-service"
-        - name: DB_NAME
-          value: "test_db"
-        - name: SPRING_DATASOURCE_PASSWORD
+        # Write DB Configuration
+        - name: WRITE_MYSQL_HOST
+          value: "posts-write-mysql-service"
+        - name: WRITE_DB_NAME
+          value: "posts_write_db"
+        - name: WRITE_MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: test-mysql-secret
+              name: posts-write-mysql-secret
               key: root_password
+
+        # Read DB Configuration
+        - name: READ_MYSQL_HOST
+          value: "posts-read-mysql-service"
+        - name: READ_DB_NAME
+          value: "posts_read_db"
+        - name: READ_MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: posts-read-mysql-secret
+              key: root_password
+
+        # JWT Configuration
+        - name: jwtSecret
+          valueFrom:
+            secretKeyRef:
+              name: jwtsecret-secret
+              key: k
+
+        # User Service Configuration
+        - name: USER_SERVICE_URL
+          value: "http://ing-default-samplealbing-bcdf6-110164755-b48ba1cb3cc4.kr.lb.naverncp.com"

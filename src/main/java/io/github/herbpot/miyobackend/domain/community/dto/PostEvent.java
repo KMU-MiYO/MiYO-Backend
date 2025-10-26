@@ -28,10 +28,11 @@ public class PostEvent implements Serializable {
     /**
      * 이벤트 타입
      * - CREATE: 게시글 생성
-     * - DELETE: 게시글 삭제
+     * - UPDATE: 게시글 수정 (논리 삭제 포함)
+     * - DELETE: 게시글 삭제 (하드 삭제, 현재 미사용)
      */
     public enum EventType {
-        CREATE, DELETE
+        CREATE, UPDATE, DELETE
     }
 
     /**
@@ -47,7 +48,12 @@ public class PostEvent implements Serializable {
     /**
      * 작성자 ID
      */
-    private Long userId;
+    private String userId;
+
+    /**
+     * 작성자 닉네임
+     */
+    private String userNickname;
 
     /**
      * 부모 게시글 ID
@@ -92,11 +98,12 @@ public class PostEvent implements Serializable {
     /**
      * Post Entity로부터 CREATE 이벤트 생성
      */
-    public static PostEvent createEvent(Post post) {
+    public static PostEvent createEvent(Post post, String userNickname) {
         return PostEvent.builder()
                 .eventType(EventType.CREATE)
                 .postId(post.getPostId())
                 .userId(post.getUserId())
+                .userNickname(userNickname)
                 .parentPostId(post.getParentPostId())
                 .imagePath(post.getImagePath())
                 .latitude(post.getLatitude())
@@ -109,7 +116,28 @@ public class PostEvent implements Serializable {
     }
 
     /**
-     * DELETE 이벤트 생성
+     * Post Entity로부터 UPDATE 이벤트 생성
+     * - 논리 삭제 등 게시글 수정 시 사용
+     */
+    public static PostEvent updateEvent(Post post, String userNickname) {
+        return PostEvent.builder()
+                .eventType(EventType.UPDATE)
+                .postId(post.getPostId())
+                .userId(post.getUserId())
+                .userNickname(userNickname)
+                .parentPostId(post.getParentPostId())
+                .imagePath(post.getImagePath())
+                .latitude(post.getLatitude())
+                .longitude(post.getLongitude())
+                .category(post.getCategory())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .createdAt(post.getCreatedAt())
+                .build();
+    }
+
+    /**
+     * DELETE 이벤트 생성 (하드 삭제 시 사용, 현재 미사용)
      * - 삭제 시에는 postId만 필요
      */
     public static PostEvent deleteEvent(Long postId) {
