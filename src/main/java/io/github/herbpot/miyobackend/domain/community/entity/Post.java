@@ -123,4 +123,13 @@ public class Post {
     public double getLongitude() {
         return location.getX();
     }
+
+    /**
+     * 논리 삭제 (Soft Delete)
+     * - userId를 '탈퇴한 사용자'로 변경
+     * - 실제 데이터는 삭제하지 않음
+     */
+    public void softDelete() {
+        this.userId = "탈퇴한 사용자";
+    }
 }
