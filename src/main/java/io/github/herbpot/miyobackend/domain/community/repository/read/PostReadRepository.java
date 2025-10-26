@@ -49,4 +49,15 @@ public interface PostReadRepository extends JpaRepository<PostReadModel, Long> {
      * @return 게시글 상세 정보
      */
     Optional<PostReadModel> findByPostId(Long postId);
+
+    /**
+     * 부모 게시글 ID로 댓글 목록 조회
+     * - parentPostId가 일치하는 댓글들만 조회
+     * - 최신순으로 정렬
+     *
+     * @param parentPostId 부모 게시글 ID
+     * @param pageable 페이징 정보
+     * @return 댓글 목록 (페이징)
+     */
+    Page<PostReadModel> findByParentPostIdOrderByCreatedAtDesc(Long parentPostId, Pageable pageable);
 }
