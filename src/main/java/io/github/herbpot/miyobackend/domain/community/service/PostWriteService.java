@@ -99,20 +99,20 @@ public class PostWriteService {
     }
 
     /**
-     * 게시글 삭제 (하드 삭제)
-     * 1. 게시글 존재 여부 및 작성자 확인
+     * 게시글/댓글 삭제 (하드 삭제)
+     * 1. 게시글/댓글 존재 여부 및 작성자 확인
      * 2. Write DB에서 삭제
      * 3. Redis에 DELETE 이벤트 발행 (비동기 Read Model 업데이트)
      *
-     * @param postId 삭제할 게시글 ID
+     * @param postId 삭제할 게시글/댓글 ID
      * @param userId 요청자 ID (본인 확인용)
-     * @throws IllegalArgumentException 게시글이 존재하지 않거나 작성자가 아닌 경우
+     * @throws IllegalArgumentException 게시글/댓글이 존재하지 않거나 작성자가 아닌 경우
      */
     @Transactional("writeTransactionManager")
     public void deletePost(Long postId, String userId) {
         log.info("Deleting post: postId={}, userId={}", postId, userId);
 
-        // 1. 게시글 조회 및 검증
+        // 1. 게시글/댓글 조회 및 검증
         Post post = postRepository.findByPostIdAndUserId(postId, userId)
                 .orElseThrow(() -> {
                     log.warn("Post not found or unauthorized: postId={}, userId={}", postId, userId);

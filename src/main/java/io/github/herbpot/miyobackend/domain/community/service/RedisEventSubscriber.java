@@ -57,6 +57,9 @@ public class RedisEventSubscriber {
                 case CREATE:
                     handleCreateEvent(event);
                     break;
+                case UPDATE:
+                    handleUpdateEvent(event);
+                    break;
                 case DELETE:
                     handleDeleteEvent(event);
                     break;
@@ -108,7 +111,48 @@ public class RedisEventSubscriber {
     }
 
     /**
-     * DELETE 이벤트 처리
+     * UPDATE 이벤트 처리
+     * - PostReadModel의 userId와 userNickname 업데이트 (논리 삭제 시 사용)
+     * - 존재하지 않는 게시글인 경우 경고 로그만 남김
+     *
+     * @param event UPDATE 이벤트
+     */
+    private void handleUpdateEvent(PostEvent event) {
+        log.info("Handling UPDATE event: postId={}", event.getPostId());
+
+        postReadRepository.findById(event.getPostId())
+                .ifPresentOrElse(
+                        readModel -> {
+                            // Point 객체 생성
+                            Point location = GEOMETRY_FACTORY.createPoint(
+                                    new Coordinate(event.getLongitude(), event.getLatitude())
+                            );
+
+                            // 전체 필드 업데이트
+                            PostReadModel updatedModel = PostReadModel.builder()
+                                    .postId(event.getPostId())
+                                    .userId(event.getUserId())
+                                    .userNickname(event.getUserNickname())
+                                    .parentPostId(event.getParentPostId())
+                                    .imagePath(event.getImagePath())
+                                    .location(location)
+                                    .category(event.getCategory())
+                                    .title(event.getTitle())
+                                    .content(event.getContent())
+                                    .createdAt(event.getCreatedAt())
+                                    .empathyCount(readModel.getEmpathyCount())  // 기존 공감수 유지
+                                    .build();
+
+                            postReadRepository.save(updatedModel);
+                            log.info("Successfully updated PostReadModel: postId={}, userId={}",
+                                    event.getPostId(), event.getUserId());
+                        },
+                        () -> log.warn("PostReadModel not found for update: postId={}", event.getPostId())
+                );
+    }
+
+    /**
+     * DELETE 이벤트 처리 (하드 삭제 시 사용, 현재 미사용)
      * - PostReadModel을 하드 삭제
      * - 존재하지 않는 게시글인 경우 경고 로그만 남김
      *

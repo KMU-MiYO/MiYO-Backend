@@ -1,5 +1,6 @@
 package io.github.herbpot.miyobackend.domain.community.service;
 
+import io.github.herbpot.miyobackend.domain.community.dto.CommentResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostDetailResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.PostReadModel;
@@ -124,10 +125,11 @@ public class PostReadService {
      * - postId로 게시글 조회
      * - 삭제된 게시글은 조회 불가
      * - 공감수 및 사용자의 공감 여부 포함
+     * - 해당 게시글의 댓글 목록 포함 (최신순)
      *
      * @param postId 게시글 ID
      * @param userId 조회하는 사용자 ID (공감 여부 확인용, nullable)
-     * @return 게시글 상세 정보 (닉네임, 공감수, 공감 여부 포함)
+     * @return 게시글 상세 정보 (닉네임, 공감수, 공감 여부, 댓글 목록 포함)
      * @throws IllegalArgumentException 게시글이 존재하지 않거나 삭제된 경우
      */
     public PostDetailResponse findPostById(Long postId, String userId) {
@@ -153,10 +155,98 @@ public class PostReadService {
             isEmpathized = empathyRepository.existsByUserIdAndPostId(userId, postId);
         }
 
-        log.info("Found post: postId={}, userId={}, nickname={}, empathyCount={}, isEmpathized={}",
-                readModel.getPostId(), readModel.getUserId(), nickname, empathyCount, isEmpathized);
+        // 댓글 트리 구조 생성
+        java.util.List<CommentResponse> comments = buildCommentTree(postId);
 
-        return PostDetailResponse.from(readModel, nickname, empathyCount, isEmpathized);
+        log.info("Found post: postId={}, userId={}, nickname={}, empathyCount={}, isEmpathized={}, commentsCount={}",
+                readModel.getPostId(), readModel.getUserId(), nickname, empathyCount, isEmpathized, comments.size());
+
+        return PostDetailResponse.from(readModel, nickname, empathyCount, isEmpathized, comments);
+    }
+
+    /**
+     * 댓글 트리 구조 생성 (최대 2단계: 댓글 -> 대댓글)
+     * - 게시글의 1단계 댓글들을 조회
+     * - 각 댓글의 대댓글(2단계)까지만 조회
+     * - 최신순 정렬
+     *
+     * @param parentPostId 부모 게시글 ID
+     * @return 댓글 트리 목록 (최대 2단계)
+     */
+    private java.util.List<CommentResponse> buildCommentTree(Long parentPostId) {
+        // 1단계: 게시글의 직접 자식 댓글들만 조회 (최신순)
+        org.springframework.data.domain.Pageable unpaged = org.springframework.data.domain.Pageable.unpaged();
+        org.springframework.data.domain.Page<PostReadModel> commentsPage = postReadRepository
+                .findByParentPostIdOrderByCreatedAtDesc(parentPostId, unpaged);
+
+        java.util.List<PostReadModel> commentList = commentsPage.getContent();
+
+        if (commentList.isEmpty()) {
+            return java.util.List.of();
+        }
+
+        // 1단계 댓글 ID 리스트 추출
+        java.util.List<Long> commentIds = commentList.stream()
+                .map(PostReadModel::getPostId)
+                .toList();
+
+        // 1단계 댓글 공감수 조회 (한번에 조회)
+        java.util.Map<Long, Long> commentEmpathyCountMap = new java.util.HashMap<>();
+        if (!commentIds.isEmpty()) {
+            java.util.List<Object[]> commentEmpathyCounts = empathyRepository.countByPostIds(commentIds);
+            for (Object[] row : commentEmpathyCounts) {
+                commentEmpathyCountMap.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        // 2단계: 모든 1단계 댓글들의 대댓글 조회 (한 번에)
+        java.util.Map<Long, java.util.List<PostReadModel>> repliesMap = new java.util.HashMap<>();
+        java.util.List<Long> allReplyIds = new java.util.ArrayList<>();
+
+        for (Long commentId : commentIds) {
+            org.springframework.data.domain.Page<PostReadModel> repliesPage = postReadRepository
+                    .findByParentPostIdOrderByCreatedAtDesc(commentId, unpaged);
+
+            java.util.List<PostReadModel> replies = repliesPage.getContent();
+            repliesMap.put(commentId, replies);
+
+            // 대댓글 ID 수집
+            replies.stream()
+                    .map(PostReadModel::getPostId)
+                    .forEach(allReplyIds::add);
+        }
+
+        // 대댓글 공감수 조회 (한번에 조회)
+        java.util.Map<Long, Long> replyEmpathyCountMap = new java.util.HashMap<>();
+        if (!allReplyIds.isEmpty()) {
+            java.util.List<Object[]> replyEmpathyCounts = empathyRepository.countByPostIds(allReplyIds);
+            for (Object[] row : replyEmpathyCounts) {
+                replyEmpathyCountMap.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        // PostReadModel -> CommentResponse 변환 (대댓글 포함, 최대 2단계)
+        return commentList.stream()
+                .map(model -> {
+                    CommentResponse comment = CommentResponse.from(
+                            model,
+                            commentEmpathyCountMap.getOrDefault(model.getPostId(), 0L)
+                    );
+
+                    // 대댓글 조회 및 설정 (2단계까지만)
+                    java.util.List<PostReadModel> replyModels = repliesMap.getOrDefault(model.getPostId(), java.util.List.of());
+                    java.util.List<CommentResponse> replies = replyModels.stream()
+                            .map(replyModel -> CommentResponse.from(
+                                    replyModel,
+                                    replyEmpathyCountMap.getOrDefault(replyModel.getPostId(), 0L)
+                            ))
+                            .toList();
+
+                    comment.setReplies(replies);
+
+                    return comment;
+                })
+                .toList();
     }
 
     /**
