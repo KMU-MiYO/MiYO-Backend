@@ -2,7 +2,7 @@
 -- posts_read, empathy_data 테이블 생성
 -- Read Service에서 사용
 
-USE posts_read_db;
+USE post_read_db;
 
 -- Read Model 테이블
 CREATE TABLE IF NOT EXISTS posts_read (

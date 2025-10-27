@@ -2,7 +2,7 @@
 -- posts_write 테이블 생성
 -- Write Service에서 사용
 
-USE posts_write_db;
+USE post_write_db;
 
 -- Write Model 테이블
 CREATE TABLE IF NOT EXISTS posts_write (
