@@ -18,12 +18,6 @@ import lombok.NoArgsConstructor;
 public class PostCreateRequest {
 
     /**
-     * 부모 게시글 ID
-     * - null이면 원본 게시글, 값이 있으면 답글/댓글
-     */
-    private Long parentPostId;
-
-    /**
      * 이미지 경로 (URL)
      * - 선택 사항
      */
