@@ -65,7 +65,7 @@ public class PostWriteService {
         // 3. Post 엔티티 생성 및 저장
         Post post = Post.builder()
                 .userId(userId)
-                .parentPostId(request.getParentPostId())
+                .parentPostId(null)  // 댓글/답글 API가 분리되어 있으므로 항상 null
                 .imagePath(request.getImagePath())
                 .location(location)
                 .category(request.getCategory())
