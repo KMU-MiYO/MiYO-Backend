@@ -1,0 +1,22 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="MiYoBackendApplication" type="Application" factoryName="Application">
+    <envs>
+      <env name="MYSQL_HOST" value="localhost" />
+      <env name="DB_NAME" value="content_db" />
+      <env name="SPRING_DATASOURCE_PASSWORD" value="root1234" />
+      <env name="REDIS_HOST" value="localhost" />
+      <env name="REDIS_PORT" value="6379" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="io.github.herbpot.miyobackend.MiYoBackendApplication" />
+    <module name="MiYO-Backend.main" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="io.github.herbpot.miyobackend.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
