@@ -26,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "User", description = "사용자 관리 API")
 @RestController
@@ -124,6 +125,17 @@ public class UserRestController {
             @ModelAttribute UpdateUserRequest request
     ) {
         userService.updateUser(userId, request);
+        return ResponseEntity.ok().build();
+    }
+    @PatchMapping("/{userId}/profile")
+    public ResponseEntity<UserInfoResponse> modifyProfileMyId(@PathVariable String userId,@RequestBody MultipartFile updateUserRequest) {
+        userService.updateUserProfile(userId, updateUserRequest);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{userId}/nickname")
+    public ResponseEntity<UserInfoResponse> modifyNickNameMyId(@PathVariable String userId,@RequestBody String updateUserRequest) {
+        userService.updateUserNickName(userId, updateUserRequest);
         return ResponseEntity.ok().build();
     }
 
@@ -255,6 +267,18 @@ public class UserRestController {
     @PatchMapping("/my")
     public ResponseEntity<UserInfoResponse> modifyMyId(@RequestBody UpdateUserRequest updateUserRequest) {
         userService.updateUser(userService.getCurrentUserId(), updateUserRequest);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/my/profile")
+    public ResponseEntity<UserInfoResponse> modifyProfileMyId(@RequestBody MultipartFile updateUserRequest) {
+        userService.updateUserProfile(userService.getCurrentUserId(), updateUserRequest);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/my/nickname")
+    public ResponseEntity<UserInfoResponse> modifyNickNameMyId(@RequestBody String updateUserRequest) {
+        userService.updateUserNickName(userService.getCurrentUserId(), updateUserRequest);
         return ResponseEntity.ok().build();
     }
 

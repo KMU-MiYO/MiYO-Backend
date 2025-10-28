@@ -157,6 +157,24 @@ public class UserService {
         }
 
         // 2. 나머지 사용자 정보 업데이트
+        user.update(request.getNickname());
+    }
+
+    @Transactional
+    public void updateUserProfile(String userId, MultipartFile request) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자입니다."));
+        objectStorageService.removeFile(user.getProfilePicture());
+
+        // 새 이미지 업로드 후 URL 반환
+        String profileImageUrl = objectStorageService.uploadFile(request);
+        user.updateProfileImageUrl(profileImageUrl);
+    }
+
+    @Transactional
+    public void updateUserNickName(String userId, String request) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자입니다."));
         user.update(request);
     }
 

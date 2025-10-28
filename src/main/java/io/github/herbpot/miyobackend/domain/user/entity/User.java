@@ -47,9 +47,9 @@ public class User {
         return new User(null, nickname, userId, email, password, profilePicture, LocalDateTime.now(), null, null, authority);
     }
 
-    public void update(UpdateUserRequest request) {
-        if (request.getNickname() != null) {
-            this.nickname = request.getNickname();
+    public void update(String nickname) {
+        if (nickname != null) {
+            this.nickname = nickname;
         }
     }
 
