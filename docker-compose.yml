@@ -5,19 +5,20 @@ services:
     container_name: miyo-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root1234
-      MYSQL_DATABASE: content_db
+      MYSQL_DATABASE: contest_db
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql
-      - ./init-db-challenge.sql:/docker-entrypoint-initdb.d/02-init-db-challenge.sql
+      - ./init-db-challenge.sql:/docker-entrypoint-initdb.d/init-db-challenge.sql
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - miyo-network
 
   # Redis
   redis:
@@ -30,27 +31,54 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    networks:
+      - miyo-network
 
-  # Spring Boot 애플리케이션 (선택사항 - 로컬 gradle 실행도 가능)
+  # Spring Boot 애플리케이션
   app:
     build: .
     container_name: miyo-backend
     environment:
+      # Spring Profile
+      SPRING_PROFILE: local
+
+      # MySQL Configuration
       MYSQL_HOST: mysql
-      DB_NAME: content_db
+      DB_NAME: contest_db
       SPRING_DATASOURCE_PASSWORD: root1234
+
+      # Redis Configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      jwtSecret: dGVzdC1zZWNyZXQta2V5LWZvci1qd3QtdGVzdGluZy1wdXJwb3Nlcy0xMjM0NTY3ODkw
+
+      # JWT Configuration
+      jwtSecret: 7Jqw66as64qU7ZSE66Gc7KCd7Yq466Gc67aA7YSw7ZW067Cp7J2E7JuQ7ZWc64uk
+
+      # User Service Configuration (Mock for local)
+      USER_SERVICE_URL: http://host.docker.internal:8081
+
+      # Gemini AI Configuration
       GEMINI_API_KEY: ${GEMINI_API_KEY:-your-api-key-here}
+
+      # NCP Object Storage Configuration
+      NCP_ACCESS_KEY: ${NCP_ACCESS_KEY:-your-access-key}
+      NCP_SECRET_KEY: ${NCP_SECRET_KEY:-your-secret-key}
+      NCP_BUCKET_NAME: ${NCP_BUCKET_NAME:-contest90-image-bucket}
+      NCP_DIRECTORY: ${NCP_DIRECTORY:-generate/}
     ports:
-      - "8080:8080"
+      - "8082:8080"
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - miyo-network
 
 volumes:
   mysql-data:
+
+networks:
+  miyo-network:
+    driver: bridge

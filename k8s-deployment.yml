@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: miyo-backend-deployment
+  name: miyo-backend-contest
   labels:
     app: miyo-backend
 spec:
@@ -27,28 +27,6 @@ spec:
         ports:
         - containerPort: 8080
         env:
-        # Write DB Configuration
-        - name: WRITE_MYSQL_HOST
-          value: "posts-write-mysql-service"
-        - name: WRITE_DB_NAME
-          value: "posts_write_db"
-        - name: WRITE_MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: posts-write-mysql-secret
-              key: root_password
-
-        # Read DB Configuration
-        - name: READ_MYSQL_HOST
-          value: "posts-read-mysql-service"
-        - name: READ_DB_NAME
-          value: "posts_read_db"
-        - name: READ_MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: posts-read-mysql-secret
-              key: root_password
-
         # JWT Configuration
         - name: jwtSecret
           valueFrom:
@@ -59,3 +37,43 @@ spec:
         # User Service Configuration
         - name: USER_SERVICE_URL
           value: "http://ing-default-samplealbing-bcdf6-110164755-b48ba1cb3cc4.kr.lb.naverncp.com"
+
+        # NCP Object Storage Configuration
+        - name: NCP_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ncp-secret
+              key: ak
+        - name: NCP_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ncp-secret
+              key: sk
+        - name: NCP_BUCKET_NAME
+          value: "contest90-image-bucket"
+        - name: NCP_DIRECTORY
+          value: "generate/"
+
+        # Gemini AI Configuration
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gemini-secret
+              key: api-key
+
+        # Redis Configuration
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+
+        # MySQL Configuration
+        - name: MYSQL_HOST
+          value: "contest-db-service"
+        - name: DB_NAME
+          value: "contest_db"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: contest-mysql-secret
+              key: root_password
