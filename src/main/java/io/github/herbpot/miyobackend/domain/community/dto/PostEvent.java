@@ -16,13 +16,13 @@ import java.time.LocalDateTime;
  * - Write Model(Post)의 데이터를 Read Model로 전달
  * - Serializable 구현: Redis에서 직렬화/역직렬화 가능하도록
  * - eventType: CREATE, DELETE 등 이벤트 타입 구분
+ * - Event 인터페이스 구현
  */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
-public class PostEvent implements Serializable {
+public class PostEvent implements Event, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -146,5 +146,14 @@ public class PostEvent implements Serializable {
                 .eventType(EventType.DELETE)
                 .postId(postId)
                 .build();
+    }
+
+    /**
+     * Event 인터페이스 구현
+     * - 이벤트 타입 이름 반환
+     */
+    @Override
+    public String getEventTypeName() {
+        return "POST_EVENT";
     }
 }

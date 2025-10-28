@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -13,12 +14,15 @@ import java.time.LocalDateTime;
  * - Redis Pub/Sub을 통해 전달되는 공감 이벤트
  * - Write DB에서 공감 생성/삭제 후 발행
  * - RedisEventSubscriber가 수신하여 Read DB 업데이트
+ * - Event 인터페이스 구현
  */
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmpathyEvent {
+public class EmpathyEvent implements Event, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * 이벤트 타입
@@ -77,5 +81,14 @@ public class EmpathyEvent {
                 .postId(empathyData.getPostId())
                 .createdAt(empathyData.getCreatedAt())
                 .build();
+    }
+
+    /**
+     * Event 인터페이스 구현
+     * - 이벤트 타입 이름 반환
+     */
+    @Override
+    public String getEventTypeName() {
+        return "EMPATHY_EVENT";
     }
 }
