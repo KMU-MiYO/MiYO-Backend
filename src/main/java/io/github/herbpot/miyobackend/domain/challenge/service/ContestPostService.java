@@ -4,6 +4,7 @@ import io.github.herbpot.miyobackend.client.UserServiceClient;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCommentRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCreateRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostResponse;
+import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostSummaryResponse;
 import io.github.herbpot.miyobackend.domain.challenge.entity.ContestPost;
 import io.github.herbpot.miyobackend.domain.challenge.exception.AlreadySubmittedException;
 import io.github.herbpot.miyobackend.domain.challenge.exception.ContestNotFoundException;
@@ -16,7 +17,9 @@ import io.github.herbpot.miyobackend.domain.challenge.validator.MissionValidator
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +38,7 @@ public class ContestPostService {
     private final ContestUserRepository contestUserRepository;
     private final UserServiceClient userServiceClient;
     private final MissionValidatorFactory missionValidatorFactory;
+    private final io.github.herbpot.miyobackend.client.NCPObjectStorageClient ncpObjectStorageClient;
 
     /**
      * 공모전 제출물 작성
@@ -72,6 +76,20 @@ public class ContestPostService {
         // 사용자 닉네임 조회
         String userNickname = userServiceClient.getUserNickname(userId);
 
+        // 이미지 처리: imagePath가 있으면 그대로 사용, 없으면 base64Image를 업로드
+        String finalImagePath = request.getImagePath();
+
+        if (finalImagePath == null && request.getBase64Image() != null && !request.getBase64Image().isEmpty()) {
+            log.info("Uploading base64 image to NCP Object Storage: userId={}", userId);
+            try {
+                finalImagePath = ncpObjectStorageClient.uploadBase64Image(request.getBase64Image(), "image.jpg");
+                log.info("Image uploaded successfully: imagePath={}", finalImagePath);
+            } catch (Exception e) {
+                log.error("Failed to upload image, proceeding without image", e);
+                // 이미지 업로드 실패 시 null로 진행 (선택 필드이므로)
+            }
+        }
+
         // 제출물 생성
         ContestPost contestPost = ContestPost.builder()
                 .contestId(contestId)
@@ -80,7 +98,7 @@ public class ContestPostService {
                 .title(request.getTitle())
                 .content(request.getContent())
                 .category(request.getCategory())
-                .imagePath(request.getImagePath())
+                .imagePath(finalImagePath)
                 .fileUrl(request.getFileUrl())
                 .build();
 
@@ -119,6 +137,42 @@ public class ContestPostService {
             String userNickname = userServiceClient.getUserNickname(post.getUserId());
             return ContestPostResponse.fromWithNickname(post, userNickname);
         });
+    }
+
+    /**
+     * 공모전 제출물 목록 조회 (요약 정보, 정렬 지원)
+     * - title, userId, imagePath, empathy, createdAt만 반환
+     * - 정렬: empathy (공감순), createdAt (최신순)
+     *
+     * @param contestId 공모전 ID
+     * @param sortBy 정렬 기준 ("empathy" 또는 "createdAt")
+     * @param pageable 페이징 정보
+     * @return 제출물 요약 목록
+     */
+    @Transactional(readOnly = true)
+    public Page<ContestPostSummaryResponse> getPostsSummaryByContestId(Long contestId, String sortBy, Pageable pageable) {
+        log.info("Getting contest posts summary: contestId={}, sortBy={}, page={}", contestId, sortBy, pageable.getPageNumber());
+
+        // 정렬 기준 설정
+        Sort sort;
+        if ("empathy".equalsIgnoreCase(sortBy)) {
+            // 공감순: empathy DESC, createdAt DESC (공감 같으면 최신순)
+            sort = Sort.by(Sort.Order.desc("empathy"), Sort.Order.desc("createdAt"));
+        } else {
+            // 최신순 (기본값): createdAt DESC
+            sort = Sort.by(Sort.Order.desc("createdAt"));
+        }
+
+        // 페이징 + 정렬 적용
+        Pageable pageableWithSort = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                sort
+        );
+
+        Page<ContestPost> posts = contestPostRepository.findByContestIdWithSort(contestId, pageableWithSort);
+
+        return posts.map(ContestPostSummaryResponse::from);
     }
 
     /**

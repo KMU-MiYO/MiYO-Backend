@@ -1,9 +1,6 @@
 package io.github.herbpot.miyobackend.domain.challenge.controller;
 
-import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCommentRequest;
-import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCreateRequest;
-import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostResponse;
-import io.github.herbpot.miyobackend.domain.challenge.dto.ContestResponse;
+import io.github.herbpot.miyobackend.domain.challenge.dto.*;
 import io.github.herbpot.miyobackend.domain.challenge.service.ContestPostService;
 import io.github.herbpot.miyobackend.domain.challenge.service.ContestService;
 import jakarta.validation.Valid;
@@ -37,27 +34,35 @@ public class ContestController {
 
     /**
      * 진행 중인 공모전 목록 조회
+     * - 인증 불필요
+     * - 최소 정보만 반환 (contestId, title, host, category)
      *
      * @return 진행 중인 공모전 목록 (200 OK)
      */
     @GetMapping
-    public ResponseEntity<List<ContestResponse>> getActiveContests() {
+    public ResponseEntity<List<ContestListResponse>> getActiveContests() {
         log.info("GET /v0/contests - Getting active contests");
-        List<ContestResponse> contests = contestService.getActiveContests();
+        List<ContestListResponse> contests = contestService.getActiveContestsList();
         return ResponseEntity.ok(contests);
     }
 
     /**
      * 특정 공모전 상세 조회
+     * - JWT 인증 필요 (isParticipant 확인)
      *
      * @param contestId 공모전 ID
+     * @param authentication Spring Security Authentication
      * @return 공모전 상세 정보 (200 OK)
      */
     @GetMapping("/{contestId}")
-    public ResponseEntity<ContestResponse> getContestById(@PathVariable Long contestId) {
-        log.info("GET /v0/contests/{} - Getting contest details", contestId);
+    public ResponseEntity<ContestResponse> getContestById(
+            @PathVariable Long contestId,
+            Authentication authentication) {
 
-        ContestResponse contest = contestService.getContestById(contestId, null);
+        String userId = (String) authentication.getPrincipal();
+        log.info("GET /v0/contests/{} - Getting contest details: userId={}", contestId, userId);
+
+        ContestResponse contest = contestService.getContestById(contestId, userId);
 
         return ResponseEntity.ok(contest);
     }
@@ -84,16 +89,17 @@ public class ContestController {
 
     /**
      * 사용자가 참가한 공모전 목록 조회
+     * - 최소 정보만 반환 (contestId, title, host, category)
      *
      * @param authentication Spring Security Authentication
      * @return 참가한 공모전 목록 (200 OK)
      */
     @GetMapping("/my")
-    public ResponseEntity<List<ContestResponse>> getMyContests(Authentication authentication) {
+    public ResponseEntity<List<ContestListResponse>> getMyContests(Authentication authentication) {
         String userId = (String) authentication.getPrincipal();
         log.info("GET /v0/contests/my - Getting user's contests: userId={}", userId);
 
-        List<ContestResponse> contests = contestService.getMyContests(userId);
+        List<ContestListResponse> contests = contestService.getMyContestsList(userId);
         return ResponseEntity.ok(contests);
     }
 
@@ -120,20 +126,24 @@ public class ContestController {
     }
 
     /**
-     * 공모전 제출물 목록 조회
+     * 공모전 제출물 목록 조회 (요약 정보)
+     * - title, userId, imagePath, empathy, createdAt만 반환
+     * - 정렬: empathy (공감순) 또는 createdAt (최신순, 기본값)
      *
      * @param contestId 공모전 ID
+     * @param sortBy 정렬 기준 (empathy 또는 createdAt, 기본값: createdAt)
      * @param pageable 페이징 정보
-     * @return 제출물 목록 (200 OK)
+     * @return 제출물 요약 목록 (200 OK)
      */
     @GetMapping("/{contestId}/posts")
-    public ResponseEntity<Page<ContestPostResponse>> getPostsByContestId(
+    public ResponseEntity<Page<ContestPostSummaryResponse>> getPostsByContestId(
             @PathVariable Long contestId,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+            @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+            @PageableDefault(size = 20) Pageable pageable) {
 
-        log.info("GET /v0/contests/{}/posts - Getting posts: page={}", contestId, pageable.getPageNumber());
+        log.info("GET /v0/contests/{}/posts - Getting posts: sortBy={}, page={}", contestId, sortBy, pageable.getPageNumber());
 
-        Page<ContestPostResponse> posts = contestPostService.getPostsByContestId(contestId, pageable);
+        Page<ContestPostSummaryResponse> posts = contestPostService.getPostsSummaryByContestId(contestId, sortBy, pageable);
         return ResponseEntity.ok(posts);
     }
 

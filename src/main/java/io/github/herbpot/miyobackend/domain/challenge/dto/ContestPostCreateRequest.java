@@ -38,9 +38,18 @@ public class ContestPostCreateRequest {
 
     /**
      * 이미지 경로 (선택)
+     * - 이미 업로드된 이미지 URL (AI 생성 이미지 등)
+     * - base64Image와 동시에 존재할 경우 imagePath 우선
      */
     @Size(max = 500, message = "이미지 경로는 500자 이하이어야 합니다.")
     private String imagePath;
+
+    /**
+     * Base64 인코딩된 이미지 데이터 (선택)
+     * - 사용자가 직접 업로드한 이미지
+     * - imagePath가 없을 경우 NCP Object Storage에 업로드
+     */
+    private String base64Image;
 
     /**
      * 첨부 파일 URL (선택)

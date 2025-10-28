@@ -30,6 +30,17 @@ public interface ContestPostRepository extends JpaRepository<ContestPost, Long> 
     Page<ContestPost> findByContestId(@Param("contestId") Long contestId, Pageable pageable);
 
     /**
+     * 특정 공모전의 제출물 목록 조회 (정렬 지원)
+     * - Pageable의 Sort를 사용하여 동적 정렬 지원
+     *
+     * @param contestId 공모전 ID
+     * @param pageable 페이징 및 정렬 정보
+     * @return 제출물 목록
+     */
+    @Query("SELECT cp FROM ContestPost cp WHERE cp.contestId = :contestId AND cp.parentPostId IS NULL")
+    Page<ContestPost> findByContestIdWithSort(@Param("contestId") Long contestId, Pageable pageable);
+
+    /**
      * 특정 제출물의 댓글 목록 조회
      *
      * @param parentPostId 부모 제출물 ID

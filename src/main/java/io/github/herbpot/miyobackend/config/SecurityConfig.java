@@ -11,6 +11,12 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Spring Security Configuration
@@ -31,6 +37,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CORS 활성화
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 // CSRF 비활성화 (JWT 사용으로 불필요)
                 .csrf(AbstractHttpConfigurer::disable)
 
@@ -50,8 +59,8 @@ public class SecurityConfig {
                         // 게시글 조회 API는 인증 선택 (인증 없이도 가능, 있으면 공감 여부 확인)
                         .requestMatchers("/v0/posts/cord", "/v0/posts/id", "/v0/posts/top3").permitAll()
 
-                        // 공모전 목록/상세 조회는 인증 불필요
-                        .requestMatchers("/v0/contests", "/v0/contests/*").permitAll()
+                        // 공모전 목록 조회는 인증 불필요, 상세 조회는 인증 필요
+                        .requestMatchers(HttpMethod.GET, "/v0/contests").permitAll()
 
                         // 관리자 API는 인증 불필요 (URL 비공개로 보안)
                         .requestMatchers("/v0/contests/adminMiYO/**").permitAll()
@@ -69,5 +78,33 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // 모든 origin 허용 (개발 환경)
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+
+        // 모든 HTTP 메서드 허용
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
+        // 모든 헤더 허용
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // 인증 정보 허용 (쿠키, Authorization 헤더 등)
+        configuration.setAllowCredentials(true);
+
+        // 노출할 헤더 설정
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+
+        // preflight 요청 캐시 시간 (1시간)
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
     }
 }

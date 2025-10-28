@@ -19,9 +19,6 @@ import java.time.LocalDateTime;
 @Table(name = "ContestPost",
     indexes = {
         @Index(name = "idx_contest_id", columnList = "contest_id")
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(name = "unique_contest_user", columnNames = {"contest_id", "user_id"})
     }
 )
 @Getter

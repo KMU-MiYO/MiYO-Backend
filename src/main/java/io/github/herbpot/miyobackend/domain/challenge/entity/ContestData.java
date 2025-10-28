@@ -44,6 +44,13 @@ public class ContestData {
     private String host;
 
     /**
+     * 카테고리
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", length = 20, nullable = false)
+    private PostCategory category;
+
+    /**
      * 설명
      */
     @Column(name = "description", columnDefinition = "TEXT")
@@ -103,12 +110,13 @@ public class ContestData {
      * Builder 패턴을 사용한 생성자
      */
     @Builder
-    public ContestData(String title, String host, String description,
+    public ContestData(String title, String host, PostCategory category, String description,
                        LocalDate startDate, LocalDate endDate,
                        Integer reward1st, Integer reward2nd, Integer reward3rd,
                        String rewardDescription, String thumbnailUrl) {
         this.title = title;
         this.host = host;
+        this.category = category;
         this.description = description;
         this.startDate = startDate;
         this.endDate = endDate;

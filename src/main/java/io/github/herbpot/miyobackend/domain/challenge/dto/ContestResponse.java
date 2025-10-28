@@ -1,10 +1,12 @@
 package io.github.herbpot.miyobackend.domain.challenge.dto;
 
 import io.github.herbpot.miyobackend.domain.challenge.entity.ContestData;
+import io.github.herbpot.miyobackend.domain.challenge.entity.PostCategory;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 공모전 조회 응답 DTO
@@ -32,6 +34,11 @@ public class ContestResponse {
      * 주관 기관
      */
     private String host;
+
+    /**
+     * 카테고리
+     */
+    private PostCategory category;
 
     /**
      * 설명
@@ -94,6 +101,11 @@ public class ContestResponse {
     private Boolean isParticipant;
 
     /**
+     * 인기 제안 Top 3 (공감 수 기준, Optional)
+     */
+    private List<ContestPostSummaryResponse> topPosts;
+
+    /**
      * ContestData Entity로부터 ContestResponse 생성
      */
     public static ContestResponse from(ContestData contestData) {
@@ -101,6 +113,7 @@ public class ContestResponse {
                 .contestId(contestData.getContestId())
                 .title(contestData.getTitle())
                 .host(contestData.getHost())
+                .category(contestData.getCategory())
                 .description(contestData.getDescription())
                 .startDate(contestData.getStartDate())
                 .endDate(contestData.getEndDate())

@@ -1,5 +1,6 @@
 package io.github.herbpot.miyobackend.domain.challenge.dto;
 
+import io.github.herbpot.miyobackend.domain.challenge.entity.PostCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -21,6 +22,9 @@ public class ContestCreateRequest {
     private String title;
 
     private String host;
+
+    @NotNull(message = "카테고리는 필수입니다.")
+    private PostCategory category;
 
     private String description;
 
