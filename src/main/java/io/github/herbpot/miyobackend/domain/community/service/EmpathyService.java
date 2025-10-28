@@ -1,6 +1,6 @@
 package io.github.herbpot.miyobackend.domain.community.service;
 
-import io.github.herbpot.miyobackend.domain.community.entity.EmpathyData;
+import io.github.herbpot.miyobackend.domain.community.entity.read.EmpathyData;
 import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,7 +1,7 @@
 package io.github.herbpot.miyobackend.domain.community.dto;
 
 import io.github.herbpot.miyobackend.domain.community.entity.PostCategory;
-import io.github.herbpot.miyobackend.domain.community.entity.PostReadModel;
+import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -48,9 +48,14 @@ public class PostListResponse {
     private Long empathyCount;
 
     /**
+     * 생성 일시
+     */
+    private LocalDateTime createdAt;
+
+    /**
      * PostReadModel로부터 PostListResponse 생성
      * - parentPostId가 null인 게시글만 조회 (댓글 제외)
-     * - postId, nickname, category, title, empathyCount 포함
+     * - postId, nickname, category, title, empathyCount, createdAt 포함
      * - nickname은 별도로 User 테이블에서 조회하여 전달
      */
     public static PostListResponse from(PostReadModel readModel, String nickname, Long empathyCount) {
@@ -60,6 +65,7 @@ public class PostListResponse {
                 .category(readModel.getCategory())
                 .title(readModel.getTitle())
                 .empathyCount(empathyCount != null ? empathyCount : 0L)
+                .createdAt(readModel.getCreatedAt())
                 .build();
     }
 }

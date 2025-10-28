@@ -1,6 +1,6 @@
 package io.github.herbpot.miyobackend.domain.community.dto;
 
-import io.github.herbpot.miyobackend.domain.community.entity.PostReadModel;
+import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

@@ -3,7 +3,7 @@ package io.github.herbpot.miyobackend.domain.community.service;
 import io.github.herbpot.miyobackend.domain.community.dto.CommentResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostDetailResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
-import io.github.herbpot.miyobackend.domain.community.entity.PostReadModel;
+import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
 import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.read.PostReadRepository;
 import lombok.RequiredArgsConstructor;
@@ -254,11 +254,15 @@ public class PostReadService {
      * - Case 1: region만 제공 -> 전체 게시글 중 해당 region 필터링
      * - Case 2: lat, lng + region -> 반경 검색 후 region 필터링
      * - Case 3: lat, lng만 제공 -> 반경 검색만 수행
+     * - categories로 여러 카테고리 필터링 (optional)
+     * - sortBy로 정렬 방식 선택 (empathy: 공감순, latest: 최신순)
      *
      * @param latitude 검색 중심 위도 (nullable)
      * @param longitude 검색 중심 경도 (nullable)
      * @param radiusKm 검색 반경 (km, nullable)
      * @param regionName 행정구역명 (예: "종로구", "강남구", nullable)
+     * @param categoryStrList 카테고리 리스트 (nullable)
+     * @param sortBy 정렬 방식 (empathy: 공감순, latest: 최신순)
      * @param pageable 페이징 정보
      * @return 조건에 맞는 게시글 목록
      */
@@ -267,15 +271,20 @@ public class PostReadService {
             Double longitude,
             Double radiusKm,
             String regionName,
+            java.util.List<String> categoryStrList,
+            String sortBy,
             Pageable pageable) {
 
-        log.info("Finding posts by region: lat={}, lng={}, radius={}km, region={}, page={}",
-                latitude, longitude, radiusKm, regionName, pageable.getPageNumber());
+        log.info("Finding posts by region: lat={}, lng={}, radius={}km, region={}, categories={}, sortBy={}, page={}",
+                latitude, longitude, radiusKm, regionName, categoryStrList, sortBy, pageable.getPageNumber());
+
+        // 카테고리 리스트 파싱
+        java.util.Set<PostCategory> categories = parseCategories(categoryStrList);
 
         // Case 1: region만 제공된 경우 - 전체 게시글 조회 후 region 필터링
         if (regionName != null && !regionName.isBlank() && (latitude == null || longitude == null)) {
             log.info("Region-only search mode: region={}", regionName);
-            return findPostsByRegionOnly(regionName, pageable);
+            return findPostsByRegionOnly(regionName, categories, sortBy, pageable);
         }
 
         // Case 2 & 3: lat, lng가 제공된 경우
@@ -330,19 +339,17 @@ public class PostReadService {
             log.info("Found {} posts within {}km", readModels.getTotalElements(), radius);
         }
 
-        // 공감수 기준 내림차순 정렬 (공감수 같으면 최신순)
-        java.util.List<PostReadModel> sortedList = targetList.stream()
-                .sorted((a, b) -> {
-                    Long countA = empathyCountMap.getOrDefault(a.getPostId(), 0L);
-                    Long countB = empathyCountMap.getOrDefault(b.getPostId(), 0L);
-                    int countCompare = countB.compareTo(countA); // 내림차순
-                    if (countCompare != 0) {
-                        return countCompare;
-                    }
-                    // 공감수 같으면 최신순
-                    return b.getCreatedAt().compareTo(a.getCreatedAt());
-                })
-                .toList();
+        // 3단계: 카테고리 필터링 (categories가 제공된 경우만)
+        if (categories != null && !categories.isEmpty()) {
+            log.info("Filtering by categories: {}", categories);
+            targetList = targetList.stream()
+                    .filter(model -> categories.contains(model.getCategory()))
+                    .toList();
+            log.info("Filtered {} posts in categories '{}'", targetList.size(), categories);
+        }
+
+        // 정렬 방식에 따라 정렬
+        java.util.List<PostReadModel> sortedList = sortPostList(targetList, empathyCountMap, sortBy);
 
         // PostReadModel -> PostListResponse 변환 (닉네임, 공감수 포함)
         java.util.List<PostListResponse> responseList = sortedList.stream()
@@ -364,14 +371,17 @@ public class PostReadService {
     /**
      * region만으로 게시글 조회 (위치 정보 없이)
      * - 전체 게시글을 조회하여 region 경계 내의 게시글만 필터링
+     * - categories로 여러 카테고리 필터링 (optional)
      * - 페이징은 필터링 후 적용
      *
      * @param regionName 행정구역명
+     * @param categories 카테고리 Set (nullable)
+     * @param sortBy 정렬 방식 (empathy: 공감순, latest: 최신순)
      * @param pageable 페이징 정보
      * @return 해당 region 내의 게시글 목록
      */
-    private Page<PostListResponse> findPostsByRegionOnly(String regionName, Pageable pageable) {
-        log.info("Finding all posts in region: {}", regionName);
+    private Page<PostListResponse> findPostsByRegionOnly(String regionName, java.util.Set<PostCategory> categories, String sortBy, Pageable pageable) {
+        log.info("Finding all posts in region: {} with categories: {}", regionName, categories);
 
         // 전체 게시글 조회 (페이징 없이)
         Pageable unpaged = Pageable.unpaged();
@@ -390,6 +400,15 @@ public class PostReadService {
 
         log.info("Filtered {} posts in region '{}'", filteredPosts.size(), regionName);
 
+        // 카테고리 필터링 (categories가 제공된 경우만)
+        if (categories != null && !categories.isEmpty()) {
+            log.info("Filtering by categories: {}", categories);
+            filteredPosts = filteredPosts.stream()
+                    .filter(model -> categories.contains(model.getCategory()))
+                    .toList();
+            log.info("Filtered {} posts in categories '{}'", filteredPosts.size(), categories);
+        }
+
         // 게시글 ID 리스트 추출
         java.util.List<Long> postIds = filteredPosts.stream()
                 .map(PostReadModel::getPostId)
@@ -404,19 +423,8 @@ public class PostReadService {
             }
         }
 
-        // 공감수 기준 내림차순 정렬 (공감수 같으면 최신순)
-        java.util.List<PostReadModel> sortedList = filteredPosts.stream()
-                .sorted((a, b) -> {
-                    Long countA = empathyCountMap.getOrDefault(a.getPostId(), 0L);
-                    Long countB = empathyCountMap.getOrDefault(b.getPostId(), 0L);
-                    int countCompare = countB.compareTo(countA); // 내림차순
-                    if (countCompare != 0) {
-                        return countCompare;
-                    }
-                    // 공감수 같으면 최신순
-                    return b.getCreatedAt().compareTo(a.getCreatedAt());
-                })
-                .toList();
+        // 정렬 방식에 따라 정렬
+        java.util.List<PostReadModel> sortedList = sortPostList(filteredPosts, empathyCountMap, sortBy);
 
         // 페이징 적용
         int start = (int) pageable.getOffset();
@@ -609,5 +617,156 @@ public class PostReadService {
                         empathyCountMap.getOrDefault(model.getPostId(), 0L)
                 ))
                 .toList();
+    }
+
+    /**
+     * 사용자별 게시글 조회
+     * - JWT 토큰에서 userId를 받아 해당 사용자가 작성한 게시글만 조회
+     * - parentPostId가 null인 게시글만 조회 (댓글 제외)
+     * - categories로 여러 카테고리 필터링 (optional)
+     * - sortBy로 정렬 방식 선택 (empathy: 공감순, latest: 최신순)
+     *
+     * @param userId 사용자 ID (JWT에서 추출)
+     * @param categoryStrList 카테고리 리스트 (nullable)
+     * @param sortBy 정렬 방식 (empathy: 공감순, latest: 최신순)
+     * @param pageable 페이징 정보
+     * @return 사용자의 게시글 목록
+     */
+    public Page<PostListResponse> findPostsByUserId(
+            String userId,
+            java.util.List<String> categoryStrList,
+            String sortBy,
+            Pageable pageable) {
+
+        log.info("Finding posts by userId: userId={}, categories={}, sortBy={}, page={}",
+                userId, categoryStrList, sortBy, pageable.getPageNumber());
+
+        // 카테고리 리스트 파싱
+        java.util.Set<PostCategory> categories = parseCategories(categoryStrList);
+
+        // 사용자의 게시글 조회 (댓글 제외)
+        Page<PostReadModel> readModels = postReadRepository
+                .findByUserIdAndParentPostIdIsNullOrderByCreatedAtDesc(userId, Pageable.unpaged());
+
+        log.info("Found {} posts by userId={}", readModels.getTotalElements(), userId);
+
+        // 카테고리 필터링 (categories가 제공된 경우만)
+        java.util.List<PostReadModel> filteredList = readModels.getContent();
+        if (categories != null && !categories.isEmpty()) {
+            log.info("Filtering by categories: {}", categories);
+            filteredList = filteredList.stream()
+                    .filter(model -> categories.contains(model.getCategory()))
+                    .toList();
+            log.info("Filtered {} posts in categories '{}'", filteredList.size(), categories);
+        }
+
+        // 게시글 ID 리스트 추출
+        java.util.List<Long> postIds = filteredList.stream()
+                .map(PostReadModel::getPostId)
+                .toList();
+
+        // 공감수 조회 (한번에 조회)
+        java.util.Map<Long, Long> empathyCountMap = new java.util.HashMap<>();
+        if (!postIds.isEmpty()) {
+            java.util.List<Object[]> empathyCounts = empathyRepository.countByPostIds(postIds);
+            for (Object[] row : empathyCounts) {
+                empathyCountMap.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        // 정렬 방식에 따라 정렬
+        java.util.List<PostReadModel> sortedList = sortPostList(
+                filteredList,
+                empathyCountMap,
+                sortBy
+        );
+
+        // 페이징 적용
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), sortedList.size());
+        java.util.List<PostReadModel> pagedList = sortedList.subList(start, end);
+
+        // PostReadModel -> PostListResponse 변환 (닉네임, 공감수 포함)
+        java.util.List<PostListResponse> responseList = pagedList.stream()
+                .map(model -> PostListResponse.from(
+                        model,
+                        model.getUserNickname(),
+                        empathyCountMap.getOrDefault(model.getPostId(), 0L)
+                ))
+                .toList();
+
+        // Page 재구성
+        return new org.springframework.data.domain.PageImpl<>(
+                responseList,
+                pageable,
+                sortedList.size()
+        );
+    }
+
+    /**
+     * 게시글 리스트 정렬 헬퍼 메서드
+     * - sortBy 파라미터에 따라 공감순 또는 최신순으로 정렬
+     *
+     * @param postList 정렬할 게시글 리스트
+     * @param empathyCountMap 공감수 맵
+     * @param sortBy 정렬 방식 (empathy: 공감순, latest: 최신순)
+     * @return 정렬된 게시글 리스트
+     */
+    private java.util.List<PostReadModel> sortPostList(
+            java.util.List<PostReadModel> postList,
+            java.util.Map<Long, Long> empathyCountMap,
+            String sortBy) {
+
+        if ("latest".equalsIgnoreCase(sortBy)) {
+            // 최신순 정렬
+            return postList.stream()
+                    .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                    .toList();
+        } else {
+            // 공감순 정렬 (기본값, 공감수 같으면 최신순)
+            return postList.stream()
+                    .sorted((a, b) -> {
+                        Long countA = empathyCountMap.getOrDefault(a.getPostId(), 0L);
+                        Long countB = empathyCountMap.getOrDefault(b.getPostId(), 0L);
+                        int countCompare = countB.compareTo(countA); // 내림차순
+                        if (countCompare != 0) {
+                            return countCompare;
+                        }
+                        // 공감수 같으면 최신순
+                        return b.getCreatedAt().compareTo(a.getCreatedAt());
+                    })
+                    .toList();
+        }
+    }
+
+    /**
+     * 카테고리 문자열 리스트를 PostCategory enum Set으로 파싱
+     * - null이거나 빈 리스트이면 null 반환
+     * - 유효하지 않은 카테고리명이면 IllegalArgumentException 발생
+     *
+     * @param categoryStrList 카테고리 문자열 리스트
+     * @return PostCategory enum Set 또는 null
+     * @throws IllegalArgumentException 유효하지 않은 카테고리명인 경우
+     */
+    private java.util.Set<PostCategory> parseCategories(java.util.List<String> categoryStrList) {
+        if (categoryStrList == null || categoryStrList.isEmpty()) {
+            return null;
+        }
+
+        java.util.Set<PostCategory> categories = new java.util.HashSet<>();
+        for (String categoryStr : categoryStrList) {
+            if (categoryStr != null && !categoryStr.isBlank()) {
+                try {
+                    categories.add(PostCategory.valueOf(categoryStr.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid category: {}", categoryStr);
+                    throw new IllegalArgumentException(
+                            "유효하지 않은 카테고리입니다: " + categoryStr + ". 사용 가능한 카테고리: NATURE, CULTURE, TRAFFIC, RESIDENCE, COMMERCIAL, NIGHT, ENVIRONMENT"
+                    );
+                }
+            }
+        }
+
+        return categories.isEmpty() ? null : categories;
     }
 }

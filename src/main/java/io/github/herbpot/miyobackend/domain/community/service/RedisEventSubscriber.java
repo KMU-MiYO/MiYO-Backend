@@ -2,7 +2,7 @@ package io.github.herbpot.miyobackend.domain.community.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
-import io.github.herbpot.miyobackend.domain.community.entity.PostReadModel;
+import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
 import io.github.herbpot.miyobackend.domain.community.repository.read.PostReadRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

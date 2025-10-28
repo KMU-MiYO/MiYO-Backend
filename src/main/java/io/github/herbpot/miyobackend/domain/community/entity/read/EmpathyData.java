@@ -1,4 +1,4 @@
-package io.github.herbpot.miyobackend.domain.community.entity;
+package io.github.herbpot.miyobackend.domain.community.entity.read;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

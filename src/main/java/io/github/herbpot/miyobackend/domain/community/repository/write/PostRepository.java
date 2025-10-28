@@ -1,6 +1,6 @@
 package io.github.herbpot.miyobackend.domain.community.repository.write;
 
-import io.github.herbpot.miyobackend.domain.community.entity.Post;
+import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

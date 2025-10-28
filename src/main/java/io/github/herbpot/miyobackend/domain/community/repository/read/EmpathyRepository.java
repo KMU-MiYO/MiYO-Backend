@@ -1,6 +1,6 @@
 package io.github.herbpot.miyobackend.domain.community.repository.read;
 
-import io.github.herbpot.miyobackend.domain.community.entity.EmpathyData;
+import io.github.herbpot.miyobackend.domain.community.entity.read.EmpathyData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

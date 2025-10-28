@@ -1,6 +1,6 @@
 package io.github.herbpot.miyobackend.domain.community.repository.read;
 
-import io.github.herbpot.miyobackend.domain.community.entity.PostReadModel;
+import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -60,4 +60,15 @@ public interface PostReadRepository extends JpaRepository<PostReadModel, Long> {
      * @return 댓글 목록 (페이징)
      */
     Page<PostReadModel> findByParentPostIdOrderByCreatedAtDesc(Long parentPostId, Pageable pageable);
+
+    /**
+     * 사용자 ID로 게시글 목록 조회
+     * - userId가 일치하고 parentPostId가 null인 게시글만 조회 (댓글 제외)
+     * - 최신순으로 정렬
+     *
+     * @param userId 사용자 ID
+     * @param pageable 페이징 정보
+     * @return 사용자의 게시글 목록 (페이징)
+     */
+    Page<PostReadModel> findByUserIdAndParentPostIdIsNullOrderByCreatedAtDesc(String userId, Pageable pageable);
 }

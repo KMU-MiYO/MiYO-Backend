@@ -63,7 +63,7 @@ public class DataSourceConfig {
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan("io.github.herbpot.miyobackend.domain.community.entity");
+        em.setPackagesToScan("io.github.herbpot.miyobackend.domain.community.entity.write");
         em.setPersistenceUnitName("writeEntityManager");
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
@@ -90,7 +90,7 @@ public class DataSourceConfig {
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan("io.github.herbpot.miyobackend.domain.community.entity");
+        em.setPackagesToScan("io.github.herbpot.miyobackend.domain.community.entity.read");
         em.setPersistenceUnitName("readEntityManager");
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

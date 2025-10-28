@@ -3,7 +3,7 @@ package io.github.herbpot.miyobackend.domain.community.service;
 import io.github.herbpot.miyobackend.client.UserServiceClient;
 import io.github.herbpot.miyobackend.domain.community.dto.PostCreateRequest;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
-import io.github.herbpot.miyobackend.domain.community.entity.Post;
+import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
 import io.github.herbpot.miyobackend.domain.community.entity.PostCategory;
 import io.github.herbpot.miyobackend.domain.community.repository.write.PostRepository;
 import org.junit.jupiter.api.BeforeEach;

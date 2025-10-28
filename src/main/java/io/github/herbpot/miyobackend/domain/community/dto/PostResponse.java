@@ -1,6 +1,6 @@
 package io.github.herbpot.miyobackend.domain.community.dto;
 
-import io.github.herbpot.miyobackend.domain.community.entity.Post;
+import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
 import io.github.herbpot.miyobackend.domain.community.entity.PostCategory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
