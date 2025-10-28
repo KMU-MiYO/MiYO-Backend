@@ -5,6 +5,7 @@ import io.github.herbpot.miyobackend.domain.community.dto.PostCreateRequest;
 import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
+import io.github.herbpot.miyobackend.domain.community.entity.PostCategory;
 import io.github.herbpot.miyobackend.domain.community.repository.write.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

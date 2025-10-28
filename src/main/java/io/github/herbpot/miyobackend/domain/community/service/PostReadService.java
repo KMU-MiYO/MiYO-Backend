@@ -4,6 +4,7 @@ import io.github.herbpot.miyobackend.domain.community.dto.CommentResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostDetailResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
+import io.github.herbpot.miyobackend.domain.community.entity.PostCategory;
 import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.read.PostReadRepository;
 import lombok.RequiredArgsConstructor;
