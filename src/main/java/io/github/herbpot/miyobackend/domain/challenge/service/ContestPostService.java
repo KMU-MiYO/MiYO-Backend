@@ -5,6 +5,10 @@ import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCommentRequ
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCreateRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostResponse;
 import io.github.herbpot.miyobackend.domain.challenge.entity.ContestPost;
+import io.github.herbpot.miyobackend.domain.challenge.exception.AlreadySubmittedException;
+import io.github.herbpot.miyobackend.domain.challenge.exception.ContestNotFoundException;
+import io.github.herbpot.miyobackend.domain.challenge.exception.ContestPostNotFoundException;
+import io.github.herbpot.miyobackend.domain.challenge.exception.NotParticipantException;
 import io.github.herbpot.miyobackend.domain.challenge.repository.ContestDataRepository;
 import io.github.herbpot.miyobackend.domain.challenge.repository.ContestPostRepository;
 import io.github.herbpot.miyobackend.domain.challenge.repository.ContestUserRepository;
@@ -50,19 +54,19 @@ public class ContestPostService {
         // 공모전 존재 여부 확인
         if (!contestDataRepository.existsById(contestId)) {
             log.warn("Contest not found: contestId={}", contestId);
-            throw new IllegalArgumentException("공모전을 찾을 수 없습니다. (contestId: " + contestId + ")");
+            throw new ContestNotFoundException(contestId);
         }
 
         // 사용자가 공모전에 참가했는지 확인
         if (!contestUserRepository.existsByContestIdAndUserId(contestId, userId)) {
             log.warn("User not participated in contest: contestId={}, userId={}", contestId, userId);
-            throw new IllegalArgumentException("공모전에 참가하지 않았습니다.");
+            throw new NotParticipantException(contestId, userId);
         }
 
         // 1인 1제출 제약 확인
         if (contestPostRepository.findByContestIdAndUserId(contestId, userId).isPresent()) {
             log.warn("User already submitted: contestId={}, userId={}", contestId, userId);
-            throw new IllegalArgumentException("이미 제출한 공모전입니다.");
+            throw new AlreadySubmittedException(contestId, userId);
         }
 
         // 사용자 닉네임 조회
@@ -128,10 +132,7 @@ public class ContestPostService {
         log.info("Getting contest post: postId={}", postId);
 
         ContestPost post = contestPostRepository.findById(postId)
-                .orElseThrow(() -> {
-                    log.warn("Contest post not found: postId={}", postId);
-                    return new IllegalArgumentException("제출물을 찾을 수 없습니다. (postId: " + postId + ")");
-                });
+                .orElseThrow(() -> new ContestPostNotFoundException(postId));
 
         String userNickname = userServiceClient.getUserNickname(post.getUserId());
         return ContestPostResponse.fromWithNickname(post, userNickname);
@@ -151,10 +152,7 @@ public class ContestPostService {
 
         // 부모 제출물 존재 여부 확인
         ContestPost parentPost = contestPostRepository.findById(parentPostId)
-                .orElseThrow(() -> {
-                    log.warn("Parent post not found: parentPostId={}", parentPostId);
-                    return new IllegalArgumentException("부모 제출물을 찾을 수 없습니다.");
-                });
+                .orElseThrow(() -> new ContestPostNotFoundException(parentPostId));
 
         // 사용자 닉네임 조회
         String userNickname = userServiceClient.getUserNickname(userId);
@@ -218,7 +216,7 @@ public class ContestPostService {
         log.info("Adding empathy: postId={}, userId={}", postId, userId);
 
         ContestPost post = contestPostRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("제출물을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ContestPostNotFoundException(postId));
 
         post.incrementEmpathy();
         contestPostRepository.save(post);
@@ -248,7 +246,7 @@ public class ContestPostService {
         log.info("Removing empathy: postId={}, userId={}", postId, userId);
 
         ContestPost post = contestPostRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("제출물을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ContestPostNotFoundException(postId));
 
         post.decrementEmpathy();
         contestPostRepository.save(post);

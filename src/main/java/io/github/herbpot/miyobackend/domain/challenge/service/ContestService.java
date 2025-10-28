@@ -1,9 +1,12 @@
 package io.github.herbpot.miyobackend.domain.challenge.service;
 
+import io.github.herbpot.miyobackend.domain.challenge.dto.ContestCreateRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestResponse;
 import io.github.herbpot.miyobackend.domain.challenge.entity.ContestData;
 import io.github.herbpot.miyobackend.domain.challenge.entity.ContestUser;
 import io.github.herbpot.miyobackend.domain.challenge.entity.ContestUserId;
+import io.github.herbpot.miyobackend.domain.challenge.exception.AlreadyJoinedException;
+import io.github.herbpot.miyobackend.domain.challenge.exception.ContestNotFoundException;
 import io.github.herbpot.miyobackend.domain.challenge.repository.ContestDataRepository;
 import io.github.herbpot.miyobackend.domain.challenge.repository.ContestPostRepository;
 import io.github.herbpot.miyobackend.domain.challenge.repository.ContestUserRepository;
@@ -72,10 +75,7 @@ public class ContestService {
         log.info("Getting contest: contestId={}, userId={}", contestId, userId);
 
         ContestData contestData = contestDataRepository.findById(contestId)
-                .orElseThrow(() -> {
-                    log.warn("Contest not found: contestId={}", contestId);
-                    return new IllegalArgumentException("공모전을 찾을 수 없습니다. (contestId: " + contestId + ")");
-                });
+                .orElseThrow(() -> new ContestNotFoundException(contestId));
 
         Long participantCount = contestUserRepository.countByContestId(contestId);
         Long submissionCount = contestPostRepository.countByContestId(contestId);
@@ -106,14 +106,14 @@ public class ContestService {
         // 공모전 존재 여부 확인
         if (!contestDataRepository.existsById(contestId)) {
             log.warn("Contest not found: contestId={}", contestId);
-            throw new IllegalArgumentException("공모전을 찾을 수 없습니다. (contestId: " + contestId + ")");
+            throw new ContestNotFoundException(contestId);
         }
 
         // 이미 참가했는지 확인
         ContestUserId id = new ContestUserId(contestId, userId);
         if (contestUserRepository.existsById(id)) {
             log.warn("User already joined contest: contestId={}, userId={}", contestId, userId);
-            throw new IllegalArgumentException("이미 참가한 공모전입니다.");
+            throw new AlreadyJoinedException(contestId, userId);
         }
 
         // 참가 정보 저장
@@ -152,5 +152,55 @@ public class ContestService {
                 })
                 .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 공모전 생성 (관리자 전용)
+     *
+     * @param request 공모전 생성 요청
+     * @return 생성된 공모전 정보
+     */
+    @Transactional
+    public ContestResponse createContest(ContestCreateRequest request) {
+        log.info("Creating contest: title={}", request.getTitle());
+
+        // ContestData 엔티티 생성
+        ContestData contestData = ContestData.builder()
+                .title(request.getTitle())
+                .host(request.getHost())
+                .description(request.getDescription())
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .reward1st(request.getReward1st())
+                .reward2nd(request.getReward2nd())
+                .reward3rd(request.getReward3rd())
+                .rewardDescription(request.getRewardDescription())
+                .thumbnailUrl(request.getThumbnailUrl())
+                .build();
+
+        ContestData savedContest = contestDataRepository.save(contestData);
+        log.info("Contest created: contestId={}", savedContest.getContestId());
+
+        return ContestResponse.from(savedContest);
+    }
+
+    /**
+     * 공모전 삭제 (관리자 전용)
+     * - Cascade로 참가자 및 제출물도 함께 삭제됨
+     *
+     * @param contestId 공모전 ID
+     */
+    @Transactional
+    public void deleteContest(Long contestId) {
+        log.info("Deleting contest: contestId={}", contestId);
+
+        // 공모전 존재 여부 확인
+        ContestData contestData = contestDataRepository.findById(contestId)
+                .orElseThrow(() -> new ContestNotFoundException(contestId));
+
+        // 공모전 삭제 (Cascade로 ContestUser, ContestPost 등도 삭제됨)
+        contestDataRepository.delete(contestData);
+
+        log.info("Contest deleted: contestId={}", contestId);
     }
 }
