@@ -153,6 +153,7 @@ public class PostEvent implements Event, Serializable {
      * - 이벤트 타입 이름 반환
      */
     @Override
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public String getEventTypeName() {
         return "POST_EVENT";
     }

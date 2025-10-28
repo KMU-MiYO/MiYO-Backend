@@ -70,10 +70,11 @@ public class RedisConfig {
      */
     @Bean
     public RedisTemplate<String, Event> redisTemplate(
+            RedisConnectionFactory connectionFactory,
             ObjectMapper objectMapper) {
 
         RedisTemplate<String, Event> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory());
+        template.setConnectionFactory(connectionFactory);
         // Key Serializer: String
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         template.setKeySerializer(stringSerializer);
@@ -124,12 +125,13 @@ public class RedisConfig {
      */
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
+            RedisConnectionFactory connectionFactory,
             MessageListenerAdapter messageListenerAdapter,
             ChannelTopic postEventsTopic,
             ChannelTopic empathyEventsTopic) {
 
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(redisConnectionFactory());
+        container.setConnectionFactory(connectionFactory);
 
         // 두 채널 토픽 모두에 메시지 리스너 등록
         container.addMessageListener(messageListenerAdapter, postEventsTopic);
