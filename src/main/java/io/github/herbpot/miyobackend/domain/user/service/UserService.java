@@ -11,6 +11,7 @@ import io.github.herbpot.miyobackend.domain.user.repository.UserRepository;
 import io.github.herbpot.miyobackend.global.jwt.JwtUtil;
 import io.github.herbpot.miyobackend.global.mail.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Random;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -88,9 +90,10 @@ public class UserService {
     public Boolean verifyEmailCode(String email, String code) {
         String redisCodeKey = REDIS_VERIFICATION_CODE_PREFIX + email;
         String storedCode = redisTemplate.opsForValue().get(redisCodeKey);
+        log.info(redisCodeKey +": "+storedCode + " // " + code);
 
         if (storedCode == null) return false;
-        if (storedCode.equals(code)) return false;
+        if (!storedCode.equals(code)) return false;
 
         // 인증 성공 시, '인증 완료' 상태를 Redis에 저장 (30분 유효)
         String redisVerifiedKey = REDIS_VERIFIED_EMAIL_PREFIX + email;
