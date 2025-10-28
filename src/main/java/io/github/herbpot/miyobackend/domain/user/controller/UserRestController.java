@@ -246,9 +246,15 @@ public class UserRestController {
         return ResponseEntity.ok(userService.isIdExist(userId));
     }
 
-    @GetMapping("/myId")
+    @GetMapping("/my")
     public ResponseEntity<UserInfoResponse> myId() {
         UserInfoResponse res = userService.findByUserId(userService.getCurrentUserId());
         return ResponseEntity.ok(res);
+    }
+
+    @PatchMapping("/my")
+    public ResponseEntity<UserInfoResponse> modifyMyId(@RequestBody UpdateUserRequest updateUserRequest) {
+        userService.updateUser(userService.getCurrentUserId(), updateUserRequest);
+        return ResponseEntity.ok().build();
     }
 }
