@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -23,9 +22,9 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * - Redis Pub/Sub을 활용한 CQRS 이벤트 처리
  * - PostEvent 직렬화/역직렬화 설정
  * - 메시지 리스너 컨테이너 구성
+ * - Redis Repository 스캔 비활성화 (JPA만 사용)
  */
 @Configuration
-@EnableRedisRepositories(basePackages = "io.github.herbpot.miyobackend.redis.repository")
 public class RedisConfig {
 
     /**
