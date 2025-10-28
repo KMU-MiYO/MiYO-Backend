@@ -38,6 +38,7 @@ public class RedisConfig {
     @Value("${spring.data.redis.port}")
     private String port;
 
+
     /**
      * ObjectMapper 빈 생성
      * - JavaTimeModule: LocalDateTime 등의 Java 8 날짜/시간 타입 직렬화 지원
@@ -51,6 +52,12 @@ public class RedisConfig {
         return mapper;
     }
 
+
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory(){
+        return new LettuceConnectionFactory(host, Integer.parseInt(port));
+    }
+
     /**
      * RedisTemplate 설정
      * - Key: String 직렬화
@@ -61,8 +68,7 @@ public class RedisConfig {
             ObjectMapper objectMapper) {
 
         RedisTemplate<String, PostEvent> template = new RedisTemplate<>();
-        RedisConnectionFactory connectionFactory = new LettuceConnectionFactory(host, Integer.parseInt(port));
-        template.setConnectionFactory(connectionFactory);
+        template.setConnectionFactory(redisConnectionFactory());
         // Key Serializer: String
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         template.setKeySerializer(stringSerializer);
@@ -104,12 +110,11 @@ public class RedisConfig {
      */
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
-            RedisConnectionFactory connectionFactory,
             MessageListenerAdapter messageListenerAdapter,
             ChannelTopic postEventsTopic) {
 
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
+        container.setConnectionFactory(redisConnectionFactory());
 
         // 채널 토픽에 메시지 리스너 등록
         container.addMessageListener(messageListenerAdapter, postEventsTopic);

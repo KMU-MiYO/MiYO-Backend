@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RedisEventPublisher {
+public class RedisEventPublisher  {
 
     private final RedisTemplate<String, PostEvent> redisTemplate;
     private final ChannelTopic postEventsTopic;

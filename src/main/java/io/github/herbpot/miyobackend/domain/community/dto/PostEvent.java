@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
 public class PostEvent implements Serializable {
 
     private static final long serialVersionUID = 1L;
