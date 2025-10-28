@@ -89,9 +89,8 @@ public class UserService {
         String redisCodeKey = REDIS_VERIFICATION_CODE_PREFIX + email;
         String storedCode = redisTemplate.opsForValue().get(redisCodeKey);
 
-        if (storedCode == null | !storedCode.equals(code)) {
-            return false;
-        }
+        if (storedCode == null) return false;
+        if (storedCode.equals(code)) return false;
 
         // 인증 성공 시, '인증 완료' 상태를 Redis에 저장 (30분 유효)
         String redisVerifiedKey = REDIS_VERIFIED_EMAIL_PREFIX + email;
