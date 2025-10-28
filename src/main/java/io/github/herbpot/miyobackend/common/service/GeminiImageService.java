@@ -50,14 +50,13 @@ public class GeminiImageService {
             // Gemini API 요청 본문 구성
             Map<String, Object> requestBody = buildRequestBody(request);
 
-            // HTTP 헤더 설정
+            // HTTP 헤더 설정 (API Key는 쿼리 파라미터로 전달)
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("x-goog-api-key", apiKey);
 
             HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(requestBody, headers);
 
-            // Gemini API 호출
+            // Gemini API 호출 (API Key를 쿼리 파라미터로 추가)
             String url = apiUrl + "?key=" + apiKey;
             ResponseEntity<String> response = restTemplate.exchange(
                     url,
@@ -142,59 +141,78 @@ public class GeminiImageService {
     }
 
     /**
-     * Gemini API 요청 본문 구성
+     * Gemini Imagen API 요청 본문 구성
+     * generativelanguage.googleapis.com 형식에 맞춰 구성
      */
     private Map<String, Object> buildRequestBody(ImageGenerationRequest request) {
         Map<String, Object> body = new HashMap<>();
 
-        // 프롬프트 설정
-        Map<String, String> prompt = new HashMap<>();
-        prompt.put("text", request.getPrompt());
-        body.put("prompt", prompt);
+        // prompt 설정
+        body.put("prompt", request.getPrompt());
 
-        // 이미지 생성 파라미터
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("sampleCount", request.getNumberOfImages());
+        // numberOfImages 설정
+        body.put("numberOfImages", request.getNumberOfImages());
 
-        // 이미지 크기 파싱 (예: "1024x1024" -> width: 1024, height: 1024)
+        // 이미지 크기 설정
+        // Gemini Imagen은 특정 크기만 지원 (예: 256x256, 512x512, 1024x1024, 1536x1536)
         String[] size = request.getSize().split("x");
         if (size.length == 2) {
             try {
-                parameters.put("width", Integer.parseInt(size[0]));
-                parameters.put("height", Integer.parseInt(size[1]));
+                int width = Integer.parseInt(size[0]);
+                int height = Integer.parseInt(size[1]);
+
+                // aspectRatio 또는 특정 크기 지정
+                Map<String, Object> imageSize = new HashMap<>();
+                imageSize.put("width", width);
+                imageSize.put("height", height);
+                body.put("imageSize", imageSize);
             } catch (NumberFormatException e) {
-                // 기본값 사용
-                parameters.put("width", 1024);
-                parameters.put("height", 1024);
+                // 기본값 사용 (1024x1024)
+                Map<String, Object> imageSize = new HashMap<>();
+                imageSize.put("width", 1024);
+                imageSize.put("height", 1024);
+                body.put("imageSize", imageSize);
             }
         }
-
-        body.put("parameters", parameters);
 
         return body;
     }
 
     /**
      * API 응답에서 이미지 데이터 추출
+     * Gemini Imagen API 응답 형식: { "generatedImages": [{ "generatedImage": "base64..." }] }
      */
     private List<String> parseImages(String responseBody) throws Exception {
         List<String> images = new ArrayList<>();
 
         JsonNode root = objectMapper.readTree(responseBody);
-        JsonNode predictions = root.get("predictions");
 
+        // Gemini Imagen API 응답 구조
+        JsonNode generatedImages = root.get("generatedImages");
+
+        if (generatedImages != null && generatedImages.isArray()) {
+            for (JsonNode imageNode : generatedImages) {
+                // Base64 인코딩된 이미지 데이터
+                JsonNode generatedImage = imageNode.get("generatedImage");
+                if (generatedImage != null) {
+                    images.add(generatedImage.asText());
+                }
+
+                // 또는 bytesBase64Encoded 필드 (응답 구조에 따라)
+                JsonNode bytesBase64 = imageNode.get("bytesBase64Encoded");
+                if (bytesBase64 != null) {
+                    images.add(bytesBase64.asText());
+                }
+            }
+        }
+
+        // 예전 응답 형식 지원 (호환성)
+        JsonNode predictions = root.get("predictions");
         if (predictions != null && predictions.isArray()) {
             for (JsonNode prediction : predictions) {
-                // Base64 인코딩된 이미지 데이터
                 JsonNode bytesBase64Encoded = prediction.get("bytesBase64Encoded");
                 if (bytesBase64Encoded != null) {
                     images.add(bytesBase64Encoded.asText());
-                }
-
-                // 또는 이미지 URL (Gemini API 응답 구조에 따라 다를 수 있음)
-                JsonNode imageUrl = prediction.get("imageUrl");
-                if (imageUrl != null) {
-                    images.add(imageUrl.asText());
                 }
             }
         }
