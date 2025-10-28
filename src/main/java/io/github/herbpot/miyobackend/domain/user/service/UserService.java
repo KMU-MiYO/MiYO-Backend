@@ -235,7 +235,7 @@ public class UserService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
-    private String getCurrentUserId() {
+    public String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getName() == null) {
             throw new CustomException(ErrorCode.UNAUTHORIZED, "인증 정보가 존재하지 않습니다.");

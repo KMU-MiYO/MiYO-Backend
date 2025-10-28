@@ -245,4 +245,10 @@ public class UserRestController {
     public ResponseEntity<ExistsResponse> isExists(@PathVariable String userId) {
         return ResponseEntity.ok(userService.isIdExist(userId));
     }
+
+    @GetMapping("/myId")
+    public ResponseEntity<UserInfoResponse> myId() {
+        UserInfoResponse res = userService.findByUserId(userService.getCurrentUserId());
+        return ResponseEntity.ok(res);
+    }
 }
