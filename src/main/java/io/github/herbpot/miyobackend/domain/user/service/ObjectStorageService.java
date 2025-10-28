@@ -1,5 +1,7 @@
 package io.github.herbpot.miyobackend.domain.user.service;
 
+import io.github.herbpot.miyobackend.global.exception.CustomException;
+import io.github.herbpot.miyobackend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,7 +25,9 @@ public class ObjectStorageService {
 
     public String uploadFile(MultipartFile file) {
         try {
-            String fileName = directory + file.getOriginalFilename();
+            if (file == null) return null;
+            String rawFileName = file.getOriginalFilename();
+            String fileName = directory + rawFileName;
 
             // S3 업로드 요청 생성
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -39,7 +43,7 @@ public class ObjectStorageService {
             return "http://contest90-image-bucket.s3-website.kr.object.ncloudstorage.com/" + fileName;
 
         } catch (IOException e) {
-            throw new RuntimeException("파일 업로드 실패", e);
+            throw new CustomException(ErrorCode.FILE_UPLOAD_ERROR);
         }
     }
 
@@ -51,7 +55,7 @@ public class ObjectStorageService {
                     .build();
             s3Client.deleteObject(deleteObjectRequest);
         } catch (S3Exception e) {
-            throw new RuntimeException("파일 삭제 실패", e);
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "파일 삭제 중 오류가 발생했습니다.");
         }
     }
 }

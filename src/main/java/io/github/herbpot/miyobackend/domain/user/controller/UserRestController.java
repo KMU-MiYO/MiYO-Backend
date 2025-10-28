@@ -180,12 +180,9 @@ public class UserRestController {
             @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
     })
     @PostMapping("/email-verification-confirm")
-    public ResponseEntity<String> confirmEmailVerification(@RequestBody EmailVerificationConfirmRequest request) {
-        if (userService.verifyEmailCode(request.getEmail(), request.getCode())) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.badRequest().body("유효하지 않거나 만료된 이메일 인증 코드입니다.");
-        }
+    public ResponseEntity<Void> confirmEmailVerification(@RequestBody EmailVerificationConfirmRequest request) {
+        userService.verifyEmailCode(request.getEmail(), request.getCode());
+        return ResponseEntity.ok().build();
     }
 
     @Operation(
@@ -235,17 +232,13 @@ public class UserRestController {
             @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
     })
     @PostMapping("/password-reset-confirm")
-    public ResponseEntity<String> confirmPasswordReset(
+    public ResponseEntity<Void> confirmPasswordReset(
             @Parameter(description = "이메일로 받은 비밀번호 재설정 토큰", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
             @RequestParam String token,
             @RequestBody PasswordResetConfirmRequest request
     ) {
-        try{
-            userService.confirmPasswordReset(token, request.getNewPassword());
-            return ResponseEntity.ok().build();
-        }catch(IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        }
+        userService.confirmPasswordReset(token, request.getNewPassword());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/isExists/{userId}")

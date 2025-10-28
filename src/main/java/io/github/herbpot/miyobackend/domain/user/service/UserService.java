@@ -8,6 +8,8 @@ import io.github.herbpot.miyobackend.domain.user.dto.response.TokenResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.UserInfoResponse;
 import io.github.herbpot.miyobackend.domain.user.entity.User;
 import io.github.herbpot.miyobackend.domain.user.repository.UserRepository;
+import io.github.herbpot.miyobackend.global.exception.CustomException;
+import io.github.herbpot.miyobackend.global.exception.ErrorCode;
 import io.github.herbpot.miyobackend.global.jwt.JwtUtil;
 import io.github.herbpot.miyobackend.global.mail.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -85,21 +87,24 @@ public class UserService {
      * 이메일 인증 코드를 확인하고, 성공 시 '인증 완료' 상태를 Redis에 저장합니다.
      * @param email 인증을 요청한 이메일 주소
      * @param code 사용자가 입력한 인증 코드
-     * @throws IllegalArgumentException 제공된 인증 코드가 유효하지 않은 경우
+     * @throws CustomException 제공된 인증 코드가 유효하지 않은 경우
      */
-    public Boolean verifyEmailCode(String email, String code) {
+    public void verifyEmailCode(String email, String code) {
         String redisCodeKey = REDIS_VERIFICATION_CODE_PREFIX + email;
         String storedCode = redisTemplate.opsForValue().get(redisCodeKey);
         log.info(redisCodeKey +": "+storedCode + " // " + code);
 
-        if (storedCode == null) return false;
-        if (!storedCode.equals(code)) return false;
+        if (storedCode == null) {
+            throw new CustomException(ErrorCode.INVALID_EMAIL_CODE);
+        }
+        if (!storedCode.equals(code)) {
+            throw new CustomException(ErrorCode.INVALID_EMAIL_CODE);
+        }
 
         // 인증 성공 시, '인증 완료' 상태를 Redis에 저장 (30분 유효)
         String redisVerifiedKey = REDIS_VERIFIED_EMAIL_PREFIX + email;
         redisTemplate.opsForValue().set(redisVerifiedKey, "true", Duration.ofMinutes(EMAIL_VERIFIED_STATUS_EXPIRATION_MINUTES));
         redisTemplate.delete(redisCodeKey); // 사용된 인증 코드는 즉시 삭제
-        return true;
     }
 
     /**
@@ -112,7 +117,7 @@ public class UserService {
         String status = redisTemplate.opsForValue().get(redisVerifiedKey);
 
         if (!"true".equals(status)) {
-            throw new IllegalStateException("이메일 인증이 필요합니다.");
+            throw new CustomException(ErrorCode.INVALID_EMAIL_CODE, "이메일 인증이 필요합니다.");
         }
 
         redisTemplate.delete(redisVerifiedKey); // 회원가입에 사용된 인증 상태는 즉시 삭제
@@ -122,10 +127,10 @@ public class UserService {
 
     public TokenResponse login(LoginRequest request) {
         User user = userRepository.findByUserId(request.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CREDENTIALS));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
+            throw new CustomException(ErrorCode.INVALID_CREDENTIALS);
         }
 
         String token = jwtUtil.generateToken(user.getUserId());
@@ -134,14 +139,14 @@ public class UserService {
 
     public UserInfoResponse findByUserId(String userId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         return UserInfoResponse.from(user);
     }
 
     @Transactional
     public void updateUser(String userId, UpdateUserRequest request) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         MultipartFile profileImageFile = request.getProfileImage();
         if (profileImageFile != null && !profileImageFile.isEmpty()) {
             objectStorageService.removeFile(user.getProfilePicture());
@@ -158,7 +163,7 @@ public class UserService {
     @Transactional
     public void deleteUser(String userId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         userRepository.delete(user);
 
         redisTemplate.convertAndSend(REDIS_USER_DELETATION_CHANNEL, userId);
@@ -176,7 +181,7 @@ public class UserService {
 
     public void findUserIdByEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 이메일입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "해당 이메일로 가입된 사용자를 찾을 수 없습니다."));
 
         String text = "귀하의 사용자 ID는: " + user.getUserId() + " 입니다.";
         emailService.sendEmail(email, FIND_USER_ID_SUBJECT, text);
@@ -185,7 +190,7 @@ public class UserService {
     @Transactional
     public void requestPasswordReset(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 이메일입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "해당 이메일로 가입된 사용자를 찾을 수 없습니다."));
 
         String token = generateSecureToken();
         LocalDateTime expiryDate = LocalDateTime.now().plusHours(PASSWORD_RESET_TOKEN_EXPIRATION_HOURS);
@@ -202,10 +207,10 @@ public class UserService {
     @Transactional
     public void confirmPasswordReset(String token, String newPassword) {
         User user = userRepository.findByPasswordResetToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않거나 만료된 재설정 토큰입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_RESET_TOKEN));
 
         if (user.getPasswordResetTokenExpiryDate() == null || user.getPasswordResetTokenExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("만료된 재설정 토큰입니다.");
+            throw new CustomException(ErrorCode.INVALID_RESET_TOKEN, "만료된 재설정 토큰입니다.");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -219,7 +224,7 @@ public class UserService {
 
     private void validateDuplicateUserId(String userId) {
         if (userRepository.existsByUserId(userId)) {
-            throw new IllegalStateException("이미 존재하는 아이디입니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_USER_ID);
         }
     }
 
@@ -233,7 +238,7 @@ public class UserService {
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getName() == null) {
-            throw new IllegalStateException("인증 정보가 존재하지 않습니다.");
+            throw new CustomException(ErrorCode.UNAUTHORIZED, "인증 정보가 존재하지 않습니다.");
         }
         return authentication.getName();
     }
