@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RedisEventPublisher  {
 
-    private final RedisTemplate<String, PostEvent> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final ChannelTopic postEventsTopic;
 
     /**

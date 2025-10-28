@@ -63,22 +63,22 @@ public class RedisConfig {
     /**
      * RedisTemplate 설정
      * - Key: String 직렬화
-     * - Value: Jackson JSON 직렬화 (PostEvent 객체 처리)
+     * - Value: Jackson JSON 직렬화 (PostEvent, EmpathyEvent 모두 처리)
      */
     @Bean
-    public RedisTemplate<String, PostEvent> redisTemplate(
+    public RedisTemplate<String, Object> redisTemplate(
             ObjectMapper objectMapper) {
 
-        RedisTemplate<String, PostEvent> template = new RedisTemplate<>();
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory());
         // Key Serializer: String
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         template.setKeySerializer(stringSerializer);
         template.setHashKeySerializer(stringSerializer);
 
-        // Value Serializer: JSON (PostEvent 객체를 JSON으로 변환)
-        Jackson2JsonRedisSerializer<PostEvent> jsonSerializer =
-            new Jackson2JsonRedisSerializer<>(objectMapper, PostEvent.class);
+        // Value Serializer: JSON (Object 타입으로 PostEvent, EmpathyEvent 모두 처리)
+        Jackson2JsonRedisSerializer<Object> jsonSerializer =
+            new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
         template.setValueSerializer(jsonSerializer);
         template.setHashValueSerializer(jsonSerializer);
 
