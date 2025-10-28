@@ -257,4 +257,10 @@ public class UserRestController {
         userService.updateUser(userService.getCurrentUserId(), updateUserRequest);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/my")
+    public ResponseEntity<Void> deleteMe() {
+        userService.deleteUser(userService.getCurrentUserId());
+        return ResponseEntity.ok().build();
+    }
 }
