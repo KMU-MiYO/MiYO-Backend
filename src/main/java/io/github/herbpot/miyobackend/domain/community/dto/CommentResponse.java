@@ -59,6 +59,12 @@ public class CommentResponse {
     private Long empathyCount;
 
     /**
+     * 사용자가 이 댓글에 공감했는지 여부
+     * - 로그인하지 않은 경우 false
+     */
+    private Boolean isEmpathized;
+
+    /**
      * 대댓글 목록
      * - 이 댓글의 자식 댓글들
      * - 최대 2단계까지만 (댓글의 대댓글은 replies가 항상 빈 배열)
@@ -70,7 +76,7 @@ public class CommentResponse {
      * - 위치 정보, 제목, 이미지, 카테고리 제외
      * - 대댓글은 별도로 설정
      */
-    public static CommentResponse from(PostReadModel readModel, Long empathyCount) {
+    public static CommentResponse from(PostReadModel readModel, Long empathyCount, Boolean isEmpathized) {
         return CommentResponse.builder()
                 .postId(readModel.getPostId())
                 .userId(readModel.getUserId())
@@ -79,6 +85,7 @@ public class CommentResponse {
                 .content(readModel.getContent())
                 .createdAt(readModel.getCreatedAt())
                 .empathyCount(empathyCount != null ? empathyCount : 0L)
+                .isEmpathized(isEmpathized != null ? isEmpathized : false)
                 .replies(List.of())  // 초기에는 빈 리스트
                 .build();
     }

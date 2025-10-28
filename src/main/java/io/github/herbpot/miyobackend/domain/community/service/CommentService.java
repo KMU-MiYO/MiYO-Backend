@@ -7,7 +7,7 @@ import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
 import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
-import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyRepository;
+import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyReadRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.read.PostReadRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.write.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,7 @@ public class CommentService {
 
     private final PostRepository postRepository;
     private final PostReadRepository postReadRepository;
-    private final EmpathyRepository empathyRepository;
+    private final EmpathyReadRepository empathyReadRepository;
     private final RedisEventPublisher redisEventPublisher;
     private final UserServiceClient userServiceClient;
 
@@ -134,10 +134,10 @@ public class CommentService {
                 .map(PostReadModel::getPostId)
                 .toList();
 
-        // 공감수 조회 (한번에 조회)
+        // 공감수 조회 (한번에 조회) - Read DB 사용
         java.util.Map<Long, Long> empathyCountMap = new java.util.HashMap<>();
         if (!commentIds.isEmpty()) {
-            java.util.List<Object[]> empathyCounts = empathyRepository.countByPostIds(commentIds);
+            java.util.List<Object[]> empathyCounts = empathyReadRepository.countByPostIds(commentIds);
             for (Object[] row : empathyCounts) {
                 empathyCountMap.put((Long) row[0], (Long) row[1]);
             }

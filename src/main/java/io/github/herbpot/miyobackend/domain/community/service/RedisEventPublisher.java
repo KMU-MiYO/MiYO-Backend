@@ -1,5 +1,6 @@
 package io.github.herbpot.miyobackend.domain.community.service;
 
+import io.github.herbpot.miyobackend.domain.community.dto.EmpathyEvent;
 import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Service;
 /**
  * RedisEventPublisher
  * - Redis Pub/Sub의 Publisher 역할
- * - PostEvent를 Redis 채널에 발행
+ * - PostEvent, EmpathyEvent를 Redis 채널에 발행
  * - Write 작업 후 비동기적으로 Read Model 업데이트를 위한 이벤트 발행
  */
 @Slf4j
@@ -42,6 +43,28 @@ public class RedisEventPublisher  {
                     event.getPostId(), e.getMessage(), e);
             // 예외를 던지지 않고 로그만 남김 (발행 실패가 Write 작업에 영향을 주지 않도록)
             // 실제 프로덕션 환경에서는 재시도 로직이나 Dead Letter Queue 고려 필요
+        }
+    }
+
+    /**
+     * EmpathyEvent를 Redis 채널에 발행
+     * - Write Model에서 공감 추가/삭제 후 호출
+     * - RedisEventSubscriber가 이 이벤트를 구독하여 Read Model 업데이트
+     *
+     * @param event 발행할 EmpathyEvent (CREATE 또는 DELETE)
+     */
+    public void publishEmpathyEvent(EmpathyEvent event) {
+        try {
+            log.info("Publishing EmpathyEvent to Redis: eventType={}, empathyId={}, postId={}",
+                    event.getEventType(), event.getEmpathyId(), event.getPostId());
+
+            // Redis 채널에 이벤트 발행 (동일한 채널 사용)
+            redisTemplate.convertAndSend(postEventsTopic.getTopic(), event);
+
+            log.info("Successfully published EmpathyEvent: empathyId={}", event.getEmpathyId());
+        } catch (Exception e) {
+            log.error("Failed to publish EmpathyEvent to Redis: empathyId={}, error={}",
+                    event.getEmpathyId(), e.getMessage(), e);
         }
     }
 }

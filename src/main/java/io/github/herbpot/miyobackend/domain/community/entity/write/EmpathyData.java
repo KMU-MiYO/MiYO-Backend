@@ -1,4 +1,4 @@
-package io.github.herbpot.miyobackend.domain.community.entity.read;
+package io.github.herbpot.miyobackend.domain.community.entity.write;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -10,10 +10,11 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 /**
- * EmpathyData Entity
+ * EmpathyData Entity (Write DB)
  * - 게시글 공감 데이터
  * - 한 사용자가 한 게시글에 하나의 공감만 가능
  * - userId + postId 복합키
+ * - Write DB에 저장 후 Redis 이벤트를 통해 Read DB로 동기화
  */
 @Entity
 @Table(name = "empathy_data",

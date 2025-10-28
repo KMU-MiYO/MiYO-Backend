@@ -5,7 +5,7 @@ import io.github.herbpot.miyobackend.domain.community.dto.PostDetailResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
 import io.github.herbpot.miyobackend.domain.community.entity.PostCategory;
-import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyRepository;
+import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyReadRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.read.PostReadRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PostReadService {
 
     private final PostReadRepository postReadRepository;
-    private final EmpathyRepository empathyRepository;
+    private final EmpathyReadRepository empathyReadRepository;
     private final RegionBoundaryService regionBoundaryService;
 
     /**
@@ -84,7 +84,7 @@ public class PostReadService {
         // 공감수 조회 (한번에 조회)
         java.util.Map<Long, Long> empathyCountMap = new java.util.HashMap<>();
         if (!postIds.isEmpty()) {
-            java.util.List<Object[]> empathyCounts = empathyRepository.countByPostIds(postIds);
+            java.util.List<Object[]> empathyCounts = empathyReadRepository.countByPostIds(postIds);
             for (Object[] row : empathyCounts) {
                 empathyCountMap.put((Long) row[0], (Long) row[1]);
             }
@@ -148,16 +148,16 @@ public class PostReadService {
         String nickname = readModel.getUserNickname();
 
         // 공감수 조회
-        Long empathyCount = empathyRepository.countByPostId(postId);
+        Long empathyCount = empathyReadRepository.countByPostId(postId);
 
         // 사용자의 공감 여부 확인
         Boolean isEmpathized = false;
         if (userId != null) {
-            isEmpathized = empathyRepository.existsByUserIdAndPostId(userId, postId);
+            isEmpathized = empathyReadRepository.existsByUserIdAndPostId(userId, postId);
         }
 
         // 댓글 트리 구조 생성
-        java.util.List<CommentResponse> comments = buildCommentTree(postId);
+        java.util.List<CommentResponse> comments = buildCommentTree(postId, userId);
 
         log.info("Found post: postId={}, userId={}, nickname={}, empathyCount={}, isEmpathized={}, commentsCount={}",
                 readModel.getPostId(), readModel.getUserId(), nickname, empathyCount, isEmpathized, comments.size());
@@ -170,11 +170,13 @@ public class PostReadService {
      * - 게시글의 1단계 댓글들을 조회
      * - 각 댓글의 대댓글(2단계)까지만 조회
      * - 최신순 정렬
+     * - 사용자의 공감 여부 포함
      *
      * @param parentPostId 부모 게시글 ID
+     * @param userId 사용자 ID (null 가능)
      * @return 댓글 트리 목록 (최대 2단계)
      */
-    private java.util.List<CommentResponse> buildCommentTree(Long parentPostId) {
+    private java.util.List<CommentResponse> buildCommentTree(Long parentPostId, String userId) {
         // 1단계: 게시글의 직접 자식 댓글들만 조회 (최신순)
         org.springframework.data.domain.Pageable unpaged = org.springframework.data.domain.Pageable.unpaged();
         org.springframework.data.domain.Page<PostReadModel> commentsPage = postReadRepository
@@ -194,7 +196,7 @@ public class PostReadService {
         // 1단계 댓글 공감수 조회 (한번에 조회)
         java.util.Map<Long, Long> commentEmpathyCountMap = new java.util.HashMap<>();
         if (!commentIds.isEmpty()) {
-            java.util.List<Object[]> commentEmpathyCounts = empathyRepository.countByPostIds(commentIds);
+            java.util.List<Object[]> commentEmpathyCounts = empathyReadRepository.countByPostIds(commentIds);
             for (Object[] row : commentEmpathyCounts) {
                 commentEmpathyCountMap.put((Long) row[0], (Long) row[1]);
             }
@@ -220,9 +222,24 @@ public class PostReadService {
         // 대댓글 공감수 조회 (한번에 조회)
         java.util.Map<Long, Long> replyEmpathyCountMap = new java.util.HashMap<>();
         if (!allReplyIds.isEmpty()) {
-            java.util.List<Object[]> replyEmpathyCounts = empathyRepository.countByPostIds(allReplyIds);
+            java.util.List<Object[]> replyEmpathyCounts = empathyReadRepository.countByPostIds(allReplyIds);
             for (Object[] row : replyEmpathyCounts) {
                 replyEmpathyCountMap.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        // 사용자의 댓글/대댓글 공감 여부 조회 (한번에 조회)
+        java.util.Set<Long> userEmpathizedPostIds = new java.util.HashSet<>();
+        if (userId != null) {
+            java.util.List<Long> allPostIds = new java.util.ArrayList<>(commentIds);
+            allPostIds.addAll(allReplyIds);
+
+            if (!allPostIds.isEmpty()) {
+                for (Long commentId : allPostIds) {
+                    if (empathyReadRepository.existsByUserIdAndPostId(userId, commentId)) {
+                        userEmpathizedPostIds.add(commentId);
+                    }
+                }
             }
         }
 
@@ -231,7 +248,8 @@ public class PostReadService {
                 .map(model -> {
                     CommentResponse comment = CommentResponse.from(
                             model,
-                            commentEmpathyCountMap.getOrDefault(model.getPostId(), 0L)
+                            commentEmpathyCountMap.getOrDefault(model.getPostId(), 0L),
+                            userEmpathizedPostIds.contains(model.getPostId())
                     );
 
                     // 대댓글 조회 및 설정 (2단계까지만)
@@ -239,7 +257,8 @@ public class PostReadService {
                     java.util.List<CommentResponse> replies = replyModels.stream()
                             .map(replyModel -> CommentResponse.from(
                                     replyModel,
-                                    replyEmpathyCountMap.getOrDefault(replyModel.getPostId(), 0L)
+                                    replyEmpathyCountMap.getOrDefault(replyModel.getPostId(), 0L),
+                                    userEmpathizedPostIds.contains(replyModel.getPostId())
                             ))
                             .toList();
 
@@ -314,7 +333,7 @@ public class PostReadService {
         // 공감수 조회 (한번에 조회)
         java.util.Map<Long, Long> empathyCountMap = new java.util.HashMap<>();
         if (!postIds.isEmpty()) {
-            java.util.List<Object[]> empathyCounts = empathyRepository.countByPostIds(postIds);
+            java.util.List<Object[]> empathyCounts = empathyReadRepository.countByPostIds(postIds);
             for (Object[] row : empathyCounts) {
                 empathyCountMap.put((Long) row[0], (Long) row[1]);
             }
@@ -418,7 +437,7 @@ public class PostReadService {
         // 공감수 조회 (한번에 조회)
         java.util.Map<Long, Long> empathyCountMap = new java.util.HashMap<>();
         if (!postIds.isEmpty()) {
-            java.util.List<Object[]> empathyCounts = empathyRepository.countByPostIds(postIds);
+            java.util.List<Object[]> empathyCounts = empathyReadRepository.countByPostIds(postIds);
             for (Object[] row : empathyCounts) {
                 empathyCountMap.put((Long) row[0], (Long) row[1]);
             }
@@ -521,7 +540,7 @@ public class PostReadService {
         // 공감수 조회 (한번에 조회)
         java.util.Map<Long, Long> empathyCountMap = new java.util.HashMap<>();
         if (!postIds.isEmpty()) {
-            java.util.List<Object[]> empathyCounts = empathyRepository.countByPostIds(postIds);
+            java.util.List<Object[]> empathyCounts = empathyReadRepository.countByPostIds(postIds);
             for (Object[] row : empathyCounts) {
                 empathyCountMap.put((Long) row[0], (Long) row[1]);
             }
@@ -587,7 +606,7 @@ public class PostReadService {
         // 공감수 조회 (한번에 조회)
         java.util.Map<Long, Long> empathyCountMap = new java.util.HashMap<>();
         if (!postIds.isEmpty()) {
-            java.util.List<Object[]> empathyCounts = empathyRepository.countByPostIds(postIds);
+            java.util.List<Object[]> empathyCounts = empathyReadRepository.countByPostIds(postIds);
             for (Object[] row : empathyCounts) {
                 empathyCountMap.put((Long) row[0], (Long) row[1]);
             }
@@ -669,7 +688,7 @@ public class PostReadService {
         // 공감수 조회 (한번에 조회)
         java.util.Map<Long, Long> empathyCountMap = new java.util.HashMap<>();
         if (!postIds.isEmpty()) {
-            java.util.List<Object[]> empathyCounts = empathyRepository.countByPostIds(postIds);
+            java.util.List<Object[]> empathyCounts = empathyReadRepository.countByPostIds(postIds);
             for (Object[] row : empathyCounts) {
                 empathyCountMap.put((Long) row[0], (Long) row[1]);
             }

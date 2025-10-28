@@ -7,7 +7,6 @@ import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
 import io.github.herbpot.miyobackend.domain.community.entity.PostCategory;
 import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
-import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.read.PostReadRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.write.PostRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +32,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
