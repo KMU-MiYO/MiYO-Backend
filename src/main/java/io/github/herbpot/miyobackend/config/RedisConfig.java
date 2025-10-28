@@ -55,7 +55,9 @@ public class RedisConfig {
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory(){
-        return new LettuceConnectionFactory(host, Integer.parseInt(port));
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(host, Integer.parseInt(port));
+        factory.afterPropertiesSet();
+        return factory;
     }
 
     /**
