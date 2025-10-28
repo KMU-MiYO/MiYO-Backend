@@ -3,6 +3,7 @@ package io.github.herbpot.miyobackend.domain.user.service;
 import io.github.herbpot.miyobackend.domain.user.dto.request.LoginRequest;
 import io.github.herbpot.miyobackend.domain.user.dto.request.SignUpRequest;
 import io.github.herbpot.miyobackend.domain.user.dto.request.UpdateUserRequest;
+import io.github.herbpot.miyobackend.domain.user.dto.response.ExistsResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.TokenResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.UserInfoResponse;
 import io.github.herbpot.miyobackend.domain.user.entity.User;
@@ -208,6 +209,10 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         user.resetPassword();
         userRepository.save(user);
+    }
+
+    public ExistsResponse isIdExist(String id) {
+        return new ExistsResponse(userRepository.existsByUserId(id));
     }
 
     private void validateDuplicateUserId(String userId) {

@@ -8,6 +8,7 @@ import io.github.herbpot.miyobackend.domain.user.dto.request.EmailVerificationCo
 import io.github.herbpot.miyobackend.domain.user.dto.request.FindIdRequest;
 import io.github.herbpot.miyobackend.domain.user.dto.request.PasswordResetRequest;
 import io.github.herbpot.miyobackend.domain.user.dto.request.PasswordResetConfirmRequest;
+import io.github.herbpot.miyobackend.domain.user.dto.response.ExistsResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.TokenResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.UserInfoResponse;
 import io.github.herbpot.miyobackend.domain.user.service.UserService;
@@ -29,6 +30,7 @@ public class UserRestController {
         userService.signUp(request);
         return ResponseEntity.ok().build();
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
@@ -90,4 +92,10 @@ public class UserRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
+
+    @GetMapping("/isExists/{userId}")
+    public ResponseEntity<ExistsResponse> isExists(@PathVariable String userId) {
+        return ResponseEntity.ok(userService.isIdExist(userId));
+    }
+
 }
