@@ -8,6 +8,7 @@ import io.github.herbpot.miyobackend.domain.user.dto.request.EmailVerificationCo
 import io.github.herbpot.miyobackend.domain.user.dto.request.FindIdRequest;
 import io.github.herbpot.miyobackend.domain.user.dto.request.PasswordResetRequest;
 import io.github.herbpot.miyobackend.domain.user.dto.request.PasswordResetConfirmRequest;
+import io.github.herbpot.miyobackend.domain.user.dto.response.ExistsResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.TokenResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.UserInfoResponse;
 import io.github.herbpot.miyobackend.domain.user.service.UserService;
@@ -245,5 +246,10 @@ public class UserRestController {
         }catch(IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
+    }
+
+    @GetMapping("/isExists/{userId}")
+    public ResponseEntity<ExistsResponse> isExists(@PathVariable String userId) {
+        return ResponseEntity.ok(userService.isIdExist(userId));
     }
 }
