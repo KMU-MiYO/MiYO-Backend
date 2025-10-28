@@ -41,9 +41,12 @@ dependencies {
     // JTS (Java Topology Suite): Spatial 데이터 타입 (Point, Polygon 등) 제공
     implementation 'org.locationtech.jts:jts-core:1.19.0'
 
-    // AWS SDK for S3 (NCP Object Storage 호환)
+    // AWS SDK V2 for S3 (NCP Object Storage 호환)
     implementation 'software.amazon.awssdk:s3:2.20.56'
     implementation 'software.amazon.awssdk:auth:2.20.56'
+
+    // AWS SDK V1 for S3 (NCP Object Storage - Base64 이미지 업로드용)
+    implementation 'com.amazonaws:aws-java-sdk-s3:1.12.529'
 
     implementation 'com.mysql:mysql-connector-j'
     compileOnly 'org.projectlombok:lombok'

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS ContestData (
     contest_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '공모전 ID',
     title VARCHAR(255) NOT NULL COMMENT '공모전 제목',
     host VARCHAR(100) COMMENT '주관 기관',
+    category VARCHAR(20) NOT NULL COMMENT '카테고리 (NATURE, CULTURE, TRAFFIC, RESIDENCE, COMMERCIAL, NIGHT, ENVIRONMENT)',
     description TEXT COMMENT '설명',
     start_date DATE NOT NULL COMMENT '시작일',
     end_date DATE NOT NULL COMMENT '종료일',
@@ -45,9 +46,13 @@ CREATE TABLE IF NOT EXISTS ContestPost (
     empathy INT DEFAULT 0 COMMENT '공감 개수',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '작성 시각',
     FOREIGN KEY (contest_id) REFERENCES ContestData(contest_id) ON DELETE CASCADE,
-    UNIQUE KEY unique_contest_user (contest_id, user_id) COMMENT '1인 1제출 보장',
-    INDEX idx_contest_id (contest_id) COMMENT '공모전별 제출물 조회용'
+    INDEX idx_contest_id (contest_id) COMMENT '공모전별 제출물 조회용',
+    INDEX idx_parent_post_id (parent_post_id) COMMENT '댓글 조회용'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='공모전 제출물';
+
+-- 1인 1제출 제약을 원본 제출물에만 적용 (댓글 제외)
+-- Note: MySQL은 partial unique index를 지원하지만, 이 제약은 애플리케이션 레벨에서 처리
+-- Repository의 findByContestIdAndUserId 쿼리가 parent_post_id IS NULL 조건 포함
 
 -- 미션 정의 테이블
 CREATE TABLE IF NOT EXISTS Mission (
