@@ -29,14 +29,14 @@ spec:
         env:
 
         - name: CHALLENGE_MYSQL_HOST
-          value: "challenge-mysql-service"
+          value: "user-mysql-service"
         - name: CHALLENGE_DB_NAME
           value: "contest_db"
         - name: CHALLENGE_MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: challenge-mysql-secret
-              key: root_password
+              name: mysql-secret
+              key: challenge-db-password
         # JWT Configuration
         - name: jwtSecret
           valueFrom:
@@ -84,11 +84,11 @@ spec:
 
         # MySQL Configuration
         - name: MYSQL_HOST
-          value: "contest-db-service"
+          value: "user-mysql-service"
         - name: DB_NAME
           value: "contest_db"
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: contest-mysql-secret
-              key: root_password
+              name: mysql-secret
+              key: challenge-db-password
