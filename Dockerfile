@@ -25,4 +25,4 @@ WORKDIR /app
 COPY --from=builder /app/build/libs/MiYO-Backend-0.0.1-SNAPSHOT.jar app.jar
 
 # Run application
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=${SPRING_PROFILE:local}", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
