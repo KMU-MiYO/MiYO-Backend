@@ -15,7 +15,7 @@ COPY src ./src
 RUN gradle clean build -x test --no-daemon
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+FROM openjdk:17-jdk-slim
 
 # Install curl for healthcheck
 RUN apk add --no-cache curl
