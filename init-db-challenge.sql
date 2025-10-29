@@ -1,8 +1,8 @@
 -- Challenge Database Initialization
--- Database: contest_db (기존 데이터베이스 사용)
+-- Database: challenge_db (기존 데이터베이스 사용)
 -- Challenge 관련 테이블들을 content_db에 추가
 
-USE contest_db;
+USE challenge_db;
 
 -- 공모전 메타데이터 테이블
 CREATE TABLE IF NOT EXISTS ContestData (
