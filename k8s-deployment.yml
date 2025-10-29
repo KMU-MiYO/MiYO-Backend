@@ -23,7 +23,7 @@ spec:
         - name: miyobackend
       containers:
       - name: miyo-backend
-        image: contest90.kr.ncr.ntruss.com/contest90-backend:posts-1.0
+        image: contest90.kr.ncr.ntruss.com/contest90-backend:challenge-1.0
         ports:
         - containerPort: 8080
         env:
