@@ -47,11 +47,12 @@ public class SecurityConfig {
 
                 // 인증/인가 설정
                 .authorizeHttpRequests(auth -> auth
-                        // 헬스체크, 액추에이터는 인증 없이 접근 가능
-                        .requestMatchers("/actuator/**").permitAll()
+                        // 헬스체크, 액추에이터, 루트 경로는 인증 없이 접근 가능
+                        .requestMatchers("/", "/actuator/**").permitAll()
 
                         // Swagger UI 및 OpenAPI 문서는 인증 없이 접근 가능
-                        .requestMatchers("/dev/challenge/swagger-ui/**", "/dev/challenge/v3/api-docs**", "/dev/challenge/swagger-ui.html").permitAll()
+                        .requestMatchers("/dev/challenge/swagger-ui/**", "/dev/challenge/v3/api-docs/**", "/dev/challenge/swagger-ui.html").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
                         // 공모전 목록 조회는 인증 불필요, 상세 조회는 인증 필요
                         .requestMatchers(HttpMethod.GET, "/v0/contests").permitAll()

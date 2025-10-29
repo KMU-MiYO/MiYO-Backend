@@ -26,6 +26,27 @@ spec:
         image: contest90.kr.ncr.ntruss.com/contest90-backend:challenge-1.0
         ports:
         - containerPort: 8080
+
+        # Readiness Probe - Pod가 트래픽을 받을 준비가 되었는지 확인
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # Liveness Probe - Pod가 살아있는지 확인
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+
         env:
 
         # JWT Configuration
@@ -83,3 +104,8 @@ spec:
             secretKeyRef:
               name: mysql-secret
               key: challenge-db-password
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: challenge-db-user
