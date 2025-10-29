@@ -40,7 +40,7 @@ services:
     container_name: miyo-backend
     environment:
       # Spring Profile
-      SPRING_PROFILE: local
+      SPRING_PROFILES_ACTIVE: local
 
       # MySQL Configuration
       MYSQL_HOST: mysql
@@ -52,19 +52,19 @@ services:
       REDIS_PORT: 6379
 
       # JWT Configuration
-      jwtSecret: 7Jqw66as64qU7ZSE66Gc7KCd7Yq466Gc67aA7YSw7ZW067Cp7J2E7JuQ7ZWc64uk
+      JWT_DECODE_KEY:
 
       # User Service Configuration (Mock for local)
-      USER_SERVICE_URL: http://host.docker.internal:8081
+      USER_SERVICE_URL: http://ing-default-samplealbing-bcdf6-110164755-b48ba1cb3cc4.kr.lb.naverncp.com
 
       # Gemini AI Configuration
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-your-api-key-here}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-AIzaSyBaQjCWuw6iqnyobDKJZN3tTuVTxaD5ktA}
 
       # NCP Object Storage Configuration
-      NCP_ACCESS_KEY: ${NCP_ACCESS_KEY:-your-access-key}
-      NCP_SECRET_KEY: ${NCP_SECRET_KEY:-your-secret-key}
-      NCP_BUCKET_NAME: ${NCP_BUCKET_NAME:-contest90-image-bucket}
-      NCP_DIRECTORY: ${NCP_DIRECTORY:-generate/}
+      NCP_ACCESS_KEY: ${NCP_ACCESS_KEY}
+      NCP_SECRET_KEY: ${NCP_SECRET_KEY}
+      NCP_BUCKET_NAME: ${NCP_BUCKET_NAME}
+      NCP_DIRECTORY: ${NCP_DIRECTORY}
     ports:
       - "8082:8080"
     depends_on:
