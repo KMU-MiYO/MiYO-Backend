@@ -1,5 +1,6 @@
 package io.github.herbpot.miyobackend.common.controller;
 
+import io.github.herbpot.miyobackend.common.dto.ImageEditRequest;
 import io.github.herbpot.miyobackend.common.dto.ImageGenerationRequest;
 import io.github.herbpot.miyobackend.common.dto.ImageGenerationResponse;
 import io.github.herbpot.miyobackend.common.service.GeminiImageService;
@@ -26,11 +27,11 @@ public class ImageController {
     private final GeminiImageService geminiImageService;
 
     /**
-     * AI 이미지 생성
+     * AI 이미지 생성 및 NCP 업로드
      *
      * @param request 이미지 생성 요청 (프롬프트 포함)
      * @param authentication Spring Security Authentication
-     * @return 생성된 이미지 정보 (200 OK)
+     * @return 생성된 이미지 NCP URL (200 OK)
      */
     @PostMapping("/generate")
     public ResponseEntity<ImageGenerationResponse> generateImage(
@@ -38,17 +39,49 @@ public class ImageController {
             Authentication authentication) {
 
         String userId = (String) authentication.getPrincipal();
-        log.info("POST /v0/images/generate - Generating image: userId={}, prompt='{}'",
+        log.info("POST /v0/images/generate - Generating and uploading image: userId={}, prompt='{}'",
                 userId, request.getPrompt());
 
-        ImageGenerationResponse response = geminiImageService.generateImage(request);
+        // 이미지 생성 후 NCP에 업로드하여 URL 반환
+        ImageGenerationResponse response = geminiImageService.generateAndUploadImage(request);
 
         if (response.isSuccess()) {
-            log.info("Image generation successful: userId={}, imageCount={}",
-                    userId, response.getImages().size());
+            log.info("Image generation and upload successful: userId={}, imageCount={}, urls={}",
+                    userId, response.getImages().size(), response.getImages());
             return ResponseEntity.ok(response);
         } else {
-            log.error("Image generation failed: userId={}, error={}",
+            log.error("Image generation or upload failed: userId={}, error={}",
+                    userId, response.getErrorMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * 이미지 기반 AI 이미지 생성 및 NCP 업로드
+     * - 기존 이미지 URL과 프롬프트를 받아 새로운 이미지 생성
+     *
+     * @param request 이미지 편집 요청 (imageUrl + prompt)
+     * @param authentication Spring Security Authentication
+     * @return 생성된 이미지 NCP URL (200 OK)
+     */
+    @PostMapping("/generate-from-image")
+    public ResponseEntity<ImageGenerationResponse> generateImageFromImage(
+            @Valid @RequestBody ImageEditRequest request,
+            Authentication authentication) {
+
+        String userId = (String) authentication.getPrincipal();
+        log.info("POST /v0/images/generate-from-image - Generating image from image: userId={}, imageUrl={}, prompt='{}'",
+                userId, request.getImageUrl(), request.getPrompt());
+
+        // 이미지 기반 이미지 생성 후 NCP에 업로드하여 URL 반환
+        ImageGenerationResponse response = geminiImageService.generateAndUploadImageFromImage(request);
+
+        if (response.isSuccess()) {
+            log.info("Image generation from image and upload successful: userId={}, imageCount={}, urls={}",
+                    userId, response.getImages().size(), response.getImages());
+            return ResponseEntity.ok(response);
+        } else {
+            log.error("Image generation from image or upload failed: userId={}, error={}",
                     userId, response.getErrorMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
