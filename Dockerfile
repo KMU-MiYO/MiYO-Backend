@@ -1,18 +1,18 @@
 # Multi-stage build for smaller image size
-FROM gradle:8.5-jdk17-alpine AS build
+FROM openjdk:17-jdk-slim AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Copy gradle files
-COPY build.gradle settings.gradle ./
-COPY gradle ./gradle
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle .
+COPY settings.gradle .
 
-# Copy source code
-COPY src ./src
+COPY src src
 
-# Build application (skip tests for faster build)
-RUN gradle clean build -x test --no-daemon
+RUN chmod +x ./gradlew
+RUN ./gradlew build -x test --no-daemon --no-watch-fs
 
 # Runtime stage
 FROM openjdk:17-jdk-slim
@@ -20,23 +20,14 @@ FROM openjdk:17-jdk-slim
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 
-# Create app user
-RUN addgroup -S spring && adduser -S spring -G spring
-
 # Set working directory
 WORKDIR /app
 
 # Copy built jar from build stage
-COPY --from=build /app/build/libs/MiYO-Backend-0.0.1-SNAPSHOT-plain.jar app.jar
+COPY --from=build /app/build/libs/MiYO-Backend-0.0.1-SNAPSHOT.jar app.jar
 
 # Change ownership
 RUN chown -R spring:spring /app
-
-# Switch to app user
-USER spring
-
-# Expose port
-EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
