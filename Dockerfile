@@ -1,5 +1,6 @@
 # Multi-stage build for smaller image size
 FROM openjdk:17-jdk-slim AS builder
+RUN apk add --no-cache dumb-init
 
 # Set working directory
 WORKDIR /app
