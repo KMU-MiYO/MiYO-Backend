@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: miyo-backend-contest
   labels:
-    app: miyo-backend
+    app: miyo-backend-contest
 spec:
   replicas: 1
   strategy:
@@ -13,11 +13,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: miyo-backend
+      app: miyo-backend-contest
   template:
     metadata:
       labels:
-        app: miyo-backend
+        app: miyo-backend-contest
     spec:
       imagePullSecrets:
         - name: miyobackend
@@ -28,15 +28,6 @@ spec:
         - containerPort: 8080
         env:
 
-        - name: CHALLENGE_MYSQL_HOST
-          value: "user-mysql-service"
-        - name: CHALLENGE_DB_NAME
-          value: "contest_db"
-        - name: CHALLENGE_MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mysql-secret
-              key: challenge-db-password
         # JWT Configuration
         - name: jwtSecret
           valueFrom:
