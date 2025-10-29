@@ -22,90 +22,70 @@ spec:
       imagePullSecrets:
         - name: miyobackend
       containers:
-      - name: miyo-backend
-        image: contest90.kr.ncr.ntruss.com/contest90-backend:challenge-1.0
-        ports:
-        - containerPort: 8080
+        - name: miyo-backend-contest
+          image: contest90.kr.ncr.ntruss.com/contest90-backend:challenge-1.0
+          ports:
+            - containerPort: 8080
 
-        # Readiness Probe - Pod가 트래픽을 받을 준비가 되었는지 확인
-        readinessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
+          env:
 
-        # Liveness Probe - Pod가 살아있는지 확인
-        livenessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8080
-          initialDelaySeconds: 60
-          periodSeconds: 20
-          timeoutSeconds: 5
-          failureThreshold: 3
+            # JWT Configuration
+            - name: jwtSecret
+              valueFrom:
+                secretKeyRef:
+                  name: jwtsecret-secret
+                  key: k
 
-        env:
+            # User Service Configuration
+            - name: USER_SERVICE_URL
+              value: "http://ing-default-samplealbing-bcdf6-110164755-b48ba1cb3cc4.kr.lb.naverncp.com"
 
-        # JWT Configuration
-        - name: jwtSecret
-          valueFrom:
-            secretKeyRef:
-              name: jwtsecret-secret
-              key: k
+            # NCP Object Storage Configuration
+            - name: NCP_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ncp-secret
+                  key: ak
+            - name: NCP_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ncp-secret
+                  key: sk
+            - name: NCP_BUCKET_NAME
+              value: "contest90-image-bucket"
+            - name: NCP_DIRECTORY
+              value: "generate/"
 
-        # User Service Configuration
-        - name: USER_SERVICE_URL
-          value: "http://ing-default-samplealbing-bcdf6-110164755-b48ba1cb3cc4.kr.lb.naverncp.com"
+            # Gemini AI Configuration
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-secret
+                  key: api-key
+            - name: GEMINI_MODEL
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-secret
+                  key: api-url
 
-        # NCP Object Storage Configuration
-        - name: NCP_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: ncp-secret
-              key: ak
-        - name: NCP_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: ncp-secret
-              key: sk
-        - name: NCP_BUCKET_NAME
-          value: "contest90-image-bucket"
-        - name: NCP_DIRECTORY
-          value: "generate/"
+            # Redis Configuration
+            - name: REDIS_HOST
+              value: "redis-service"
+            - name: REDIS_PORT
+              value: "6379"
 
-        # Gemini AI Configuration
-        - name: GEMINI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: gemini-secret
-              key: api-key
-        - name: GEMINI_MODEL
-          valueFrom:
-            secretKeyRef:
-              name: gemini-secret
-              key: api-url
-
-        # Redis Configuration
-        - name: REDIS_HOST
-          value: "redis-service"
-        - name: REDIS_PORT
-          value: "6379"
-
-        # MySQL Configuration
-        - name: MYSQL_HOST
-          value: "user-mysql-service"
-        - name: DB_NAME
-          value: "challenge_db"
-        - name: SPRING_DATASOURCE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mysql-secret
-              key: challenge-db-password
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: mysql-secret
-              key: challenge-db-user
+            # MySQL Configuration
+            - name: MYSQL_HOST
+              value: "user-mysql-service"
+            - name: DB_NAME
+              value: "challenge_db"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: challenge-db-password
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: challenge-db-user
