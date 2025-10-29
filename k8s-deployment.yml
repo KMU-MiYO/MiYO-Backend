@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: miyo-backend-contest-deployment
+  name: miyo-backend-challenge-deployment
   labels:
-    app: miyo-backend-contest
+    app: miyo-backend-challenge
 spec:
   replicas: 1
   strategy:
@@ -13,11 +13,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: miyo-backend-contest
+      app: miyo-backend-challenge
   template:
     metadata:
       labels:
-        app: miyo-backend-contest
+        app: miyo-backend-challenge
     spec:
       imagePullSecrets:
         - name: miyobackend
@@ -48,6 +48,10 @@ spec:
           failureThreshold: 3
 
         env:
+
+        # Server Configuration
+        - name: SERVER_SERVLET_CONTEXT_PATH
+          value: "/dev/challenge"
 
         # JWT Configuration
         - name: jwtSecret
