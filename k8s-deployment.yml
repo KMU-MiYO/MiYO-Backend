@@ -28,26 +28,34 @@ spec:
         - containerPort: 8080
         env:
         # Write DB Configuration
-        - name: WRITE_MYSQL_HOST
-          value: "post-write-mysql-service"
+        - name: MYSQL_HOST
+          value: "user-mysql-service"
         - name: WRITE_DB_NAME
           value: "post_write_db"
         - name: WRITE_MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: post-write-mysql-secret
-              key: root_password
+              name: mysql-secret
+              key: post_write_password
+        - name: WRITE_MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: post_write_user
 
         # Read DB Configuration
-        - name: READ_MYSQL_HOST
-          value: "post-read-mysql-service"
         - name: READ_DB_NAME
           value: "post_read_db"
         - name: READ_MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
               name: post-read-mysql-secret
-              key: root_password
+              key: post_read_password
+        - name: READ_MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: post_read_user
 
         - name: REDIS_HOST
           value: "redis-service"
