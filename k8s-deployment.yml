@@ -77,7 +77,7 @@ spec:
         - name: MYSQL_HOST
           value: "user-mysql-service"
         - name: DB_NAME
-          value: "contest_db"
+          value: "challenge_db"
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:

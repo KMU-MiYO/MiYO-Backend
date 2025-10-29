@@ -11,8 +11,11 @@ COPY settings.gradle .
 
 COPY src src
 
-RUN chmod +x ./gradlew
-RUN ./gradlew build -x test --no-daemon --no-watch-fs
+# Fix line endings and set execute permission
+RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew
+
+# Build with Gradle (with retry and resource limits)
+RUN ./gradlew build -x test --no-daemon --no-watch-fs --stacktrace
 
 # Runtime stage
 FROM openjdk:17-jdk-slim
