@@ -1,9 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: miyo-backend-challenge-deployment
+  name: miyo-backend-contest-deployment
   labels:
-    app: miyo-backend-challenge
+    app: miyo-backend-contest
+    ncp-sourcedeploy/history: '319041'
+  annotations:
+    ncp-sourcedeploy/origin: miyo-backend-contest-deployment
 spec:
   replicas: 1
   strategy:
@@ -13,11 +16,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: miyo-backend-challenge
+      app: miyo-backend-contest
   template:
     metadata:
       labels:
-        app: miyo-backend-challenge
+        app: miyo-backend-contest
     spec:
       imagePullSecrets:
         - name: miyobackend
@@ -30,7 +33,7 @@ spec:
         # Readiness Probe - Pod가 트래픽을 받을 준비가 되었는지 확인
         readinessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -40,7 +43,7 @@ spec:
         # Liveness Probe - Pod가 살아있는지 확인
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 20
