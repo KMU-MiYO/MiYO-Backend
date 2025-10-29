@@ -51,7 +51,6 @@ public class SecurityConfig {
                         .requestMatchers("/", "/actuator/**").permitAll()
 
                         // Swagger UI 및 OpenAPI 문서는 인증 없이 접근 가능
-                        .requestMatchers("/dev/challenge/swagger-ui/**", "/dev/challenge/v3/api-docs/**", "/dev/challenge/swagger-ui.html").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
                         // 공모전 목록 조회는 인증 불필요, 상세 조회는 인증 필요

@@ -49,10 +49,6 @@ spec:
 
         env:
 
-        # Server Configuration
-        - name: SERVER_SERVLET_CONTEXT_PATH
-          value: "/dev/challenge"
-
         # JWT Configuration
         - name: jwtSecret
           valueFrom:
