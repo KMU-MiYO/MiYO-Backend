@@ -1,13 +1,6 @@
 package io.github.herbpot.miyobackend.domain.user.controller;
 
-import io.github.herbpot.miyobackend.domain.user.dto.request.LoginRequest;
-import io.github.herbpot.miyobackend.domain.user.dto.request.SignUpRequest;
-import io.github.herbpot.miyobackend.domain.user.dto.request.UpdateUserRequest;
-import io.github.herbpot.miyobackend.domain.user.dto.request.EmailVerificationRequest;
-import io.github.herbpot.miyobackend.domain.user.dto.request.EmailVerificationConfirmRequest;
-import io.github.herbpot.miyobackend.domain.user.dto.request.FindIdRequest;
-import io.github.herbpot.miyobackend.domain.user.dto.request.PasswordResetRequest;
-import io.github.herbpot.miyobackend.domain.user.dto.request.PasswordResetConfirmRequest;
+import io.github.herbpot.miyobackend.domain.user.dto.request.*;
 import io.github.herbpot.miyobackend.domain.user.dto.response.ExistsResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.TokenResponse;
 import io.github.herbpot.miyobackend.domain.user.dto.response.UserInfoResponse;
@@ -25,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "User", description = "사용자 관리 API")
 @RestController
@@ -127,14 +119,14 @@ public class UserRestController {
         return ResponseEntity.ok().build();
     }
     @PatchMapping(value = "/{userId}/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserInfoResponse> modifyProfileMyId(@PathVariable String userId,@RequestBody MultipartFile updateUserRequest) {
-        userService.updateUserProfile(userId, updateUserRequest);
+    public ResponseEntity<Void> modifyProfileMyId(@PathVariable String userId,@RequestBody UpdateUserProfileRequest updateUserRequest) {
+        userService.updateUserProfile(userId, updateUserRequest.getProfileImage());
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{userId}/nickname")
-    public ResponseEntity<UserInfoResponse> modifyNickNameMyId(@PathVariable String userId,@RequestBody String updateUserRequest) {
-        userService.updateUserNickName(userId, updateUserRequest);
+    public ResponseEntity<Void> modifyNickNameMyId(@PathVariable String userId,@RequestBody UpdateUserNickNameRequest updateUserRequest) {
+        userService.updateUserNickName(userId, updateUserRequest.getNickname());
         return ResponseEntity.ok().build();
     }
 
@@ -264,20 +256,20 @@ public class UserRestController {
     }
 
     @PatchMapping(value = "/my", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserInfoResponse> modifyMyId(@RequestBody UpdateUserRequest updateUserRequest) {
+    public ResponseEntity<Void> modifyMyId(@RequestBody UpdateUserRequest updateUserRequest) {
         userService.updateUser(userService.getCurrentUserId(), updateUserRequest);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping(value = "/my/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserInfoResponse> modifyProfileMyId(@RequestBody MultipartFile updateUserRequest) {
-        userService.updateUserProfile(userService.getCurrentUserId(), updateUserRequest);
+    public ResponseEntity<Void> modifyProfileMyId(@RequestBody UpdateUserProfileRequest updateUserRequest) {
+        userService.updateUserProfile(userService.getCurrentUserId(), updateUserRequest.getProfileImage());
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/my/nickname")
-    public ResponseEntity<UserInfoResponse> modifyNickNameMyId(@RequestBody String updateUserRequest) {
-        userService.updateUserNickName(userService.getCurrentUserId(), updateUserRequest);
+    public ResponseEntity<Void> modifyNickNameMyId(@RequestBody UpdateUserNickNameRequest updateUserRequest) {
+        userService.updateUserNickName(userService.getCurrentUserId(), updateUserRequest.getNickname());
         return ResponseEntity.ok().build();
     }
 
