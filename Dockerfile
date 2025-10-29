@@ -22,7 +22,7 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Copy built jar from build stage
-COPY --from=build /app/build/libs/MiYO-Backend-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=builder /app/build/libs/MiYO-Backend-0.0.1-SNAPSHOT.jar app.jar
 
 # Change ownership
 RUN chown -R spring:spring /app
