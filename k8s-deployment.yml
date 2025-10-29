@@ -4,9 +4,6 @@ metadata:
   name: miyo-backend-contest-deployment
   labels:
     app: miyo-backend-contest
-    ncp-sourcedeploy/history: '319041'
-  annotations:
-    ncp-sourcedeploy/origin: miyo-backend-contest-deployment
 spec:
   replicas: 1
   strategy:
