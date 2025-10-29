@@ -1,9 +1,7 @@
 package io.github.herbpot.miyobackend.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,7 +14,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Spring Security Configuration
@@ -54,10 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
 
                         // Swagger UI 및 OpenAPI 문서는 인증 없이 접근 가능
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-
-                        // 게시글 조회 API는 인증 선택 (인증 없이도 가능, 있으면 공감 여부 확인)
-                        .requestMatchers("/v0/posts/cord", "/v0/posts/id", "/v0/posts/top3").permitAll()
+                        .requestMatchers("/dev/challenge/swagger-ui/**", "/dev/challenge/v3/api-docs**", "/dev/challenge/swagger-ui.html").permitAll()
 
                         // 공모전 목록 조회는 인증 불필요, 상세 조회는 인증 필요
                         .requestMatchers(HttpMethod.GET, "/v0/contests").permitAll()
