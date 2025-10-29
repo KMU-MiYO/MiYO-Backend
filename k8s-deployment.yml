@@ -36,12 +36,12 @@ spec:
           valueFrom:
             secretKeyRef:
               name: mysql-secret
-              key: post_write_password
+              key: post-write-db-password
         - name: WRITE_MYSQL_USER
           valueFrom:
             secretKeyRef:
               name: mysql-secret
-              key: post_write_user
+              key: post-write-db-user
 
         # Read DB Configuration
         - name: READ_DB_NAME
@@ -50,12 +50,12 @@ spec:
           valueFrom:
             secretKeyRef:
               name: mysql-secret
-              key: post_read_password
+              key: post-read-db-password
         - name: READ_MYSQL_USER
           valueFrom:
             secretKeyRef:
               name: mysql-secret
-              key: post_read_user
+              key: post-read-db-user
 
         - name: REDIS_HOST
           value: "redis-service"
