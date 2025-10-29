@@ -53,9 +53,19 @@ public class PostListResponse {
     private LocalDateTime createdAt;
 
     /**
+     * 위도
+     */
+    private Double latitude;
+
+    /**
+     * 경도
+     */
+    private Double longitude;
+
+    /**
      * PostReadModel로부터 PostListResponse 생성
      * - parentPostId가 null인 게시글만 조회 (댓글 제외)
-     * - postId, nickname, category, title, empathyCount, createdAt 포함
+     * - postId, nickname, category, title, empathyCount, createdAt, latitude, longitude 포함
      * - nickname은 별도로 User 테이블에서 조회하여 전달
      */
     public static PostListResponse from(PostReadModel readModel, String nickname, Long empathyCount) {
@@ -66,6 +76,8 @@ public class PostListResponse {
                 .title(readModel.getTitle())
                 .empathyCount(empathyCount != null ? empathyCount : 0L)
                 .createdAt(readModel.getCreatedAt())
+                .latitude(readModel.getLatitude())
+                .longitude(readModel.getLongitude())
                 .build();
     }
 }
