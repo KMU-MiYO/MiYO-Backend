@@ -48,7 +48,7 @@ public class SecurityConfig {
                 // 인증/인가 설정
                 .authorizeHttpRequests(auth -> auth
                         // 헬스체크, 액추에이터, 루트 경로는 인증 없이 접근 가능
-                        .requestMatchers("/", "/actuator/**").permitAll()
+                        .requestMatchers("/", "/actuator/**", "/actuator/health/**").permitAll()
 
                         // Swagger UI 및 OpenAPI 문서는 인증 없이 접근 가능
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
