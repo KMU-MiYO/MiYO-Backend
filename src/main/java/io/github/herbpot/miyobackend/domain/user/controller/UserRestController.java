@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -127,7 +126,7 @@ public class UserRestController {
         userService.updateUser(userId, request);
         return ResponseEntity.ok().build();
     }
-    @PatchMapping("/{userId}/profile")
+    @PatchMapping(value = "/{userId}/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserInfoResponse> modifyProfileMyId(@PathVariable String userId,@RequestBody MultipartFile updateUserRequest) {
         userService.updateUserProfile(userId, updateUserRequest);
         return ResponseEntity.ok().build();
@@ -264,13 +263,13 @@ public class UserRestController {
         return ResponseEntity.ok(res);
     }
 
-    @PatchMapping("/my")
+    @PatchMapping(value = "/my", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserInfoResponse> modifyMyId(@RequestBody UpdateUserRequest updateUserRequest) {
         userService.updateUser(userService.getCurrentUserId(), updateUserRequest);
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/my/profile")
+    @PatchMapping(value = "/my/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserInfoResponse> modifyProfileMyId(@RequestBody MultipartFile updateUserRequest) {
         userService.updateUserProfile(userService.getCurrentUserId(), updateUserRequest);
         return ResponseEntity.ok().build();
