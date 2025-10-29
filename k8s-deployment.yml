@@ -43,8 +43,13 @@ spec:
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: user-mysql-secret
-              key: root_password
+              name: mysql-secret
+              key: users-db-password
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: users-db-user
         - name: MAIL_PW
           valueFrom:
             secretKeyRef:
