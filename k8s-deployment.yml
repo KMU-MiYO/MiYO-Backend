@@ -27,6 +27,16 @@ spec:
         ports:
         - containerPort: 8080
         env:
+
+        - name: CHALLENGE_MYSQL_HOST
+          value: "challenge-mysql-service"
+        - name: CHALLENGE_DB_NAME
+          value: "contest_db"
+        - name: CHALLENGE_MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: challenge-mysql-secret
+              key: root_password
         # JWT Configuration
         - name: jwtSecret
           valueFrom:
@@ -60,6 +70,11 @@ spec:
             secretKeyRef:
               name: gemini-secret
               key: api-key
+        - name: GEMINI_MODEL
+          valueFrom:
+            secretKeyRef:
+              name: gemini-secret
+              key: api-url
 
         # Redis Configuration
         - name: REDIS_HOST
