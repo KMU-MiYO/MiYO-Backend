@@ -42,11 +42,12 @@ public class NCPObjectStorageService {
         try {
             String fileName = directory + file.getOriginalFilename();
 
-            // S3 업로드 요청 생성
+            // S3 업로드 요청 생성 (public-read ACL 설정)
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(fileName)
                     .contentType(file.getContentType())
+                    .acl(ObjectCannedACL.PUBLIC_READ)
                     .build();
 
             // 파일 업로드 실행
@@ -81,12 +82,13 @@ public class NCPObjectStorageService {
 
             log.info("Uploading Base64 image: fileName={}, size={} bytes", fileName, imageBytes.length);
 
-            // S3 업로드 요청 생성
+            // S3 업로드 요청 생성 (public-read ACL 설정)
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(fileName)
                     .contentType(contentType)
                     .contentLength((long) imageBytes.length)
+                    .acl(ObjectCannedACL.PUBLIC_READ)
                     .build();
 
             // 파일 업로드 실행
