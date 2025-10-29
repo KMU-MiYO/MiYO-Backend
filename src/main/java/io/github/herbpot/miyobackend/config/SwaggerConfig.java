@@ -19,25 +19,24 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        // JWT 인증 스킴 정의
-        String jwtSchemeName = "Bearer Authentication";
-        SecurityRequirement securityRequirement = new SecurityRequirement().addList(jwtSchemeName);
-
-        Components components = new Components()
-                .addSecuritySchemes(jwtSchemeName, new SecurityScheme()
-                        .name(jwtSchemeName)
-                        .type(SecurityScheme.Type.HTTP)
-                        .scheme("bearer")
-                        .bearerFormat("JWT")
-                        .description("JWT 토큰을 입력하세요 (Bearer 접두사 제외)")
-                );
-
+        String jwt = "JWT";
+        SecurityRequirement securityRequirement = new SecurityRequirement().addList(jwt);
+        Components components = new Components().addSecuritySchemes(jwt, new SecurityScheme()
+                .name(jwt)
+                .type(SecurityScheme.Type.HTTP)
+                .scheme("bearer")
+                .bearerFormat("JWT")
+        );
         return new OpenAPI()
-                .info(new Info()
-                        .title("MiYO Backend API")
-                        .description("MiYO 프로젝트 백엔드 API 문서")
-                        .version("v0.0.1"))
+                .components(new Components())
+                .info(apiInfo())
                 .addSecurityItem(securityRequirement)
                 .components(components);
+    }
+    private Info apiInfo() {
+        return new Info()
+                .title("MiYO Backend Challange API")
+                .description("MiYO 프로젝트 백엔드 Challenge API 문서")
+                .version("v0.0.1");
     }
 }
