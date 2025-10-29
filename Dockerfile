@@ -27,7 +27,7 @@ RUN addgroup -S spring && adduser -S spring -G spring
 WORKDIR /app
 
 # Copy built jar from build stage
-COPY --from=build /app/build/libs/*.jar app.jar
+COPY --from=build /app/build/libs/MiYO-Backend-0.0.1-SNAPSHOT-plain.jar app.jar
 
 # Change ownership
 RUN chown -R spring:spring /app
