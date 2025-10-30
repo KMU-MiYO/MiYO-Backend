@@ -1,13 +1,13 @@
 package io.github.herbpot.miyobackend.domain.community.entity.write;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
-@NoArgsConstructor()
+@AllArgsConstructor
+@Table(name = "reward")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RewardModel {
 
     @Id
