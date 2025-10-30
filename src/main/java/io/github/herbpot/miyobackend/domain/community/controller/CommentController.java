@@ -71,7 +71,8 @@ public class CommentController {
     @PostMapping
     public ResponseEntity<PostResponse> createComment(
             @Valid @RequestBody CommentCreateRequest request,
-            @Parameter(hidden = true) Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(hidden = true) @RequestHeader("Authorization") String token) {
 
         // JWT에서 userId 추출
         String userId = (String) authentication.getPrincipal();
@@ -79,7 +80,7 @@ public class CommentController {
         log.info("POST /v0/comments - Creating comment: userId={}, parentPostId={}",
                 userId, request.getParentPostId());
 
-        PostResponse response = commentService.createComment(request, userId);
+        PostResponse response = commentService.createComment(request, userId, token);
 
         log.info("POST /v0/comments - Comment created: postId={}, parentPostId={}",
                 response.getPostId(), response.getParentPostId());

@@ -64,14 +64,15 @@ public class PostWriteController {
     @PostMapping
     public ResponseEntity<PostResponse> createPost(
             @Valid @RequestBody PostCreateRequest request,
-            @Parameter(hidden = true) Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(hidden = true) @RequestHeader("Authorization") String token) {
 
         // JWT에서 userId 추출
         String userId = (String) authentication.getPrincipal();
 
         log.info("POST /v0/posts - Creating post: userId={}", userId);
 
-        PostResponse response = postWriteService.createPost(request, userId);
+        PostResponse response = postWriteService.createPost(request, userId, token);
 
         log.info("POST /v0/posts - Post created: postId={}", response.getPostId());
 

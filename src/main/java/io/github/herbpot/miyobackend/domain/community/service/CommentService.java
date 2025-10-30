@@ -48,11 +48,12 @@ public class CommentService {
      *
      * @param request 댓글 생성 요청 (parentPostId, content만 포함)
      * @param userId 작성자 ID (JWT에서 추출)
+     * @param token JWT 토큰 (Bearer 토큰 형식)
      * @return 생성된 댓글 정보
      * @throws IllegalArgumentException 부모 게시글/댓글이 존재하지 않는 경우
      */
     @Transactional("writeTransactionManager")
-    public PostResponse createComment(CommentCreateRequest request, String userId) {
+    public PostResponse createComment(CommentCreateRequest request, String userId, String token) {
         log.info("Creating comment: userId={}, parentPostId={}", userId, request.getParentPostId());
 
         // 1. 부모 게시글/댓글 존재 여부 확인 및 조회
@@ -69,8 +70,8 @@ public class CommentService {
         log.info("Inherited from parent post: latitude={}, longitude={}, category={}, title={}",
                 location.getY(), location.getX(), parentPost.getCategory(), parentPost.getTitle());
 
-        // 3. User Service에서 사용자 닉네임 조회
-        String userNickname = userServiceClient.getUserNickname(userId);
+        // 3. User Service에서 사용자 닉네임 조회 (토큰 포함)
+        String userNickname = userServiceClient.getUserNickname(userId, token);
         log.info("User nickname fetched: userId={}, nickname={}", userId, userNickname);
 
         // 4. Post 엔티티 생성 (댓글은 imagePath가 null, 나머지는 부모로부터 상속)

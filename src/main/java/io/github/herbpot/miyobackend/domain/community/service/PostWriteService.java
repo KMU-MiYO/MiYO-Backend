@@ -50,15 +50,16 @@ public class PostWriteService {
      *
      * @param request 게시글 생성 요청
      * @param userId 작성자 ID (JWT에서 추출)
+     * @param token JWT 토큰 (Bearer 토큰 형식)
      * @return 생성된 게시글 정보
      */
     @Transactional("writeTransactionManager")
-    public PostResponse createPost(PostCreateRequest request, String userId) {
+    public PostResponse createPost(PostCreateRequest request, String userId, String token) {
         log.info("Creating post: userId={}, latitude={}, longitude={}",
                 userId, request.getLatitude(), request.getLongitude());
 
-        // 1. User Service에서 사용자 닉네임 조회
-        String userNickname = userServiceClient.getUserNickname(userId);
+        // 1. User Service에서 사용자 닉네임 조회 (토큰 포함)
+        String userNickname = userServiceClient.getUserNickname(userId, token);
         log.info("User nickname fetched: userId={}, nickname={}", userId, userNickname);
 
         // 2. Point 객체 생성: Coordinate(X, Y) = Coordinate(경도, 위도)
