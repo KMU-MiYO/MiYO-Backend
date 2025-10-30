@@ -13,7 +13,7 @@ public class RewardModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
-    public String id;
+    public Integer id;
 
     @Column
     public String userId;
