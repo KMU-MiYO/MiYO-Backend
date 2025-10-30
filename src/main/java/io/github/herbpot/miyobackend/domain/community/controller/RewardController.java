@@ -49,4 +49,19 @@ public class RewardController {
         RewardModel savedModel = rewardRepository.save(newReward);
         return ResponseEntity.ok(RewardDTO.from(savedModel));
     }
+
+    @GetMapping("/my")
+    public ResponseEntity<RewardDTO> getReward(@RequestParam("userId") String userId) {
+        log.info("GET /v0/reward/my - Getting reward for user: userId={}", userId);
+
+        // 유저의 리워드 조회, 없으면 0으로 초기화된 DTO 반환
+        RewardModel rewardModel = rewardRepository.findByUserId(userId)
+                .orElse(RewardModel.builder()
+                        .userId(userId)
+                        .reward(0)
+                        .build());
+
+        log.info("Reward retrieved: userId={}, reward={}", userId, rewardModel.getReward());
+        return ResponseEntity.ok(RewardDTO.from(rewardModel));
+    }
 }
