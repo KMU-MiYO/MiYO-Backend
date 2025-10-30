@@ -48,22 +48,13 @@ public class ImageController {
 
             log.info("Bitmap image uploaded successfully: url={}", imageUrl);
 
-            ImageUploadResponse response = ImageUploadResponse.builder()
-                    .images(imageUrl)
-                    .success(true)
-                    .build();
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ImageUploadResponse.success(imageUrl));
 
         } catch (Exception e) {
             log.error("Failed to upload bitmap image", e);
 
-            ImageUploadResponse response = ImageUploadResponse.builder()
-                    .images(null)
-                    .success(false)
-                    .build();
-
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest()
+                    .body(ImageUploadResponse.failure("이미지 업로드에 실패했습니다: " + e.getMessage()));
         }
     }
 
