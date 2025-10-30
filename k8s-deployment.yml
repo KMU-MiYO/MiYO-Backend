@@ -24,6 +24,7 @@ spec:
       containers:
       - name: miyo-backend-posts
         image: contest90.kr.ncr.ntruss.com/contest90-backend:posts-1.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:
