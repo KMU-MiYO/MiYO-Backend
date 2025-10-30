@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,7 +63,7 @@ public class UserRestController {
             @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
     })
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         TokenResponse token = userService.login(request);
         return ResponseEntity.ok(token);
     }
@@ -118,14 +119,46 @@ public class UserRestController {
         userService.updateUser(userId, request);
         return ResponseEntity.ok().build();
     }
+    @Operation(
+            summary = "사용자 프로필 이미지 수정",
+            description = "사용자의 프로필 이미지를 수정합니다. JWT 토큰이 필요합니다.",
+            security = @SecurityRequirement(name = "JWT")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "프로필 이미지 수정 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 유효하지 않음)", content = @Content),
+            @ApiResponse(responseCode = "403", description = "권한 없음 (본인이 아닌 경우)", content = @Content),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음", content = @Content),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
+    })
     @PatchMapping(value = "/{userId}/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> modifyProfileMyId(@PathVariable String userId,@ModelAttribute UpdateUserProfileRequest updateUserRequest) {
+    public ResponseEntity<Void> modifyProfileMyId(
+            @Parameter(description = "수정할 사용자 아이디", example = "hong123")
+            @PathVariable String userId,
+            @ModelAttribute UpdateUserProfileRequest updateUserRequest
+    ) {
         userService.updateUserProfile(userId, updateUserRequest.getProfileImage());
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+            summary = "사용자 닉네임 수정",
+            description = "사용자의 닉네임을 수정합니다. JWT 토큰이 필요합니다.",
+            security = @SecurityRequirement(name = "JWT")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "닉네임 수정 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 유효하지 않음)", content = @Content),
+            @ApiResponse(responseCode = "403", description = "권한 없음 (본인이 아닌 경우)", content = @Content),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음", content = @Content),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
+    })
     @PatchMapping("/{userId}/nickname")
-    public ResponseEntity<Void> modifyNickNameMyId(@PathVariable String userId,@RequestBody UpdateUserNickNameRequest updateUserRequest) {
+    public ResponseEntity<Void> modifyNickNameMyId(
+            @Parameter(description = "수정할 사용자 아이디", example = "hong123")
+            @PathVariable String userId,
+            @Valid @RequestBody UpdateUserNickNameRequest updateUserRequest
+    ) {
         userService.updateUserNickName(userId, updateUserRequest.getNickname());
         return ResponseEntity.ok().build();
     }
@@ -161,7 +194,7 @@ public class UserRestController {
             @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
     })
     @PostMapping("/email-verification-request")
-    public ResponseEntity<Void> requestEmailVerification(@RequestBody EmailVerificationRequest request) {
+    public ResponseEntity<Void> requestEmailVerification(@Valid @RequestBody EmailVerificationRequest request) {
         userService.sendVerificationCode(request.getEmail());
         return ResponseEntity.ok().build();
     }
@@ -238,41 +271,121 @@ public class UserRestController {
     public ResponseEntity<Void> confirmPasswordReset(
             @Parameter(description = "이메일로 받은 비밀번호 재설정 토큰", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
             @RequestParam String token,
-            @RequestBody PasswordResetConfirmRequest request
+            @Valid @RequestBody PasswordResetConfirmRequest request
     ) {
         userService.confirmPasswordReset(token, request.getNewPassword());
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+            summary = "사용자 아이디 존재 확인",
+            description = "특정 사용자 아이디가 이미 존재하는지 확인합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "확인 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ExistsResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
+    })
     @GetMapping("/isExists/{userId}")
-    public ResponseEntity<ExistsResponse> isExists(@PathVariable String userId) {
+    public ResponseEntity<ExistsResponse> isExists(
+            @Parameter(description = "확인할 사용자 아이디", example = "hong123")
+            @PathVariable String userId
+    ) {
         return ResponseEntity.ok(userService.isIdExist(userId));
     }
 
+    @Operation(
+            summary = "현재 사용자 정보 조회",
+            description = "JWT 토큰을 통해 현재 로그인한 사용자의 정보를 조회합니다.",
+            security = @SecurityRequirement(name = "JWT")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = UserInfoResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 유효하지 않음)", content = @Content),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음", content = @Content),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
+    })
     @GetMapping("/my")
     public ResponseEntity<UserInfoResponse> myId() {
         UserInfoResponse res = userService.findByUserId(userService.getCurrentUserId());
         return ResponseEntity.ok(res);
     }
 
+    @Operation(
+            summary = "현재 사용자 정보 수정",
+            description = "JWT 토큰을 통해 현재 로그인한 사용자의 닉네임 및 프로필 이미지를 수정합니다.",
+            security = @SecurityRequirement(name = "JWT")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 유효하지 않음)", content = @Content),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음", content = @Content),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
+    })
     @PatchMapping(value = "/my", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> modifyMyId(@RequestBody UpdateUserRequest updateUserRequest) {
+    public ResponseEntity<Void> modifyMyId(@ModelAttribute UpdateUserRequest updateUserRequest) {
         userService.updateUser(userService.getCurrentUserId(), updateUserRequest);
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+            summary = "현재 사용자 프로필 이미지 수정",
+            description = "JWT 토큰을 통해 현재 로그인한 사용자의 프로필 이미지를 수정합니다.",
+            security = @SecurityRequirement(name = "JWT")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "프로필 이미지 수정 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 유효하지 않음)", content = @Content),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음", content = @Content),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
+    })
     @PatchMapping(value = "/my/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> modifyProfileMyId(@ModelAttribute UpdateUserProfileRequest updateUserRequest) {
         userService.updateUserProfile(userService.getCurrentUserId(), updateUserRequest.getProfileImage());
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+            summary = "현재 사용자 닉네임 수정",
+            description = "JWT 토큰을 통해 현재 로그인한 사용자의 닉네임을 수정합니다.",
+            security = @SecurityRequirement(name = "JWT")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "닉네임 수정 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 유효하지 않음)", content = @Content),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음", content = @Content),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
+    })
     @PatchMapping("/my/nickname")
-    public ResponseEntity<Void> modifyNickNameMyId(@RequestBody UpdateUserNickNameRequest updateUserRequest) {
+    public ResponseEntity<Void> modifyNickNameMyId(@Valid @RequestBody UpdateUserNickNameRequest updateUserRequest) {
         userService.updateUserNickName(userService.getCurrentUserId(), updateUserRequest.getNickname());
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+            summary = "현재 사용자 계정 삭제",
+            description = "JWT 토큰을 통해 현재 로그인한 사용자의 계정을 삭제합니다.",
+            security = @SecurityRequirement(name = "JWT")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "계정 삭제 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 유효하지 않음)", content = @Content),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음", content = @Content),
+            @ApiResponse(responseCode = "500", description = "서버 오류", content = @Content)
+    })
     @DeleteMapping("/my")
     public ResponseEntity<Void> deleteMe() {
         userService.deleteUser(userService.getCurrentUserId());

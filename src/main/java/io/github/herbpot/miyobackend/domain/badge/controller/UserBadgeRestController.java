@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +40,7 @@ public class UserBadgeRestController {
     public ResponseEntity<Void> assignBadgeToUser(
             @Parameter(description = "사용자 ID", example = "hong123")
             @PathVariable String userId,
-            @RequestBody AssignBadgeRequest request
+            @Valid @RequestBody AssignBadgeRequest request
     ) {
         userBadgeService.assignBadgeToUser(userId, request.getBadgeId());
         return ResponseEntity.ok().build();

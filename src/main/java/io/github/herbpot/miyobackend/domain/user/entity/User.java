@@ -24,8 +24,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String userId;
 
-    @UniqueElements
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Setter

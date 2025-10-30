@@ -114,10 +114,34 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException e,
             HttpServletRequest request
     ) {
-        log.error("HttpMessageNotReadableException: {}", e.getMessage());
+        // 상세한 에러 원인 분석
+        String detailedMessage = "요청 본문을 읽을 수 없습니다.";
+        Throwable rootCause = e.getRootCause();
+
+        if (rootCause != null) {
+            String rootMessage = rootCause.getMessage();
+            if (rootMessage != null) {
+                if (rootMessage.contains("UTF-8")) {
+                    detailedMessage = "JSON 형식이 올바르지 않습니다. UTF-8 인코딩을 확인해주세요.";
+                } else if (rootMessage.contains("parse")) {
+                    detailedMessage = "JSON 형식이 올바르지 않습니다. 요청 본문을 확인해주세요.";
+                }
+            }
+        }
+
+        // 상세한 로그 기록 (디버깅용)
+        log.error("HttpMessageNotReadableException occurred:");
+        log.error("  - Request URI: {} {}", request.getMethod(), request.getRequestURI());
+        log.error("  - Content-Type: {}", request.getContentType());
+        log.error("  - Character Encoding: {}", request.getCharacterEncoding());
+        log.error("  - Error Message: {}", e.getMessage());
+        if (rootCause != null) {
+            log.error("  - Root Cause: {}", rootCause.getMessage());
+        }
+
         ErrorResponse response = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST,
-                "요청 본문을 읽을 수 없습니다.",
+                detailedMessage,
                 request.getRequestURI()
         );
         return ResponseEntity.badRequest().body(response);
