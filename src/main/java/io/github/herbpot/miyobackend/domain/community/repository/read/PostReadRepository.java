@@ -71,4 +71,15 @@ public interface PostReadRepository extends JpaRepository<PostReadModel, Long> {
      * @return 사용자의 게시글 목록 (페이징)
      */
     Page<PostReadModel> findByUserIdAndParentPostIdIsNullOrderByCreatedAtDesc(String userId, Pageable pageable);
+
+    /**
+     * 사용자 ID로 댓글 목록 조회
+     * - userId가 일치하고 parentPostId가 null이 아닌 게시글만 조회 (댓글만)
+     * - 최신순으로 정렬
+     *
+     * @param userId 사용자 ID
+     * @param pageable 페이징 정보
+     * @return 사용자의 댓글 목록 (페이징)
+     */
+    Page<PostReadModel> findByUserIdAndParentPostIdIsNotNullOrderByCreatedAtDesc(String userId, Pageable pageable);
 }

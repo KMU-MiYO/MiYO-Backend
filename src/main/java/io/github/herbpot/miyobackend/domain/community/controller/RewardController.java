@@ -18,7 +18,7 @@ public class RewardController {
 
     private final RewardRepository rewardRepository;
 
-    @GetMapping("/update/{userId}")
+    @PutMapping("/update/{userId}")
     public ResponseEntity<RewardDTO> updateReward(@PathVariable("userId") String userId, @RequestParam("v") Integer v) {
         if (!rewardRepository.existsByUserId(userId)) {
             RewardModel savedModel = rewardRepository.save(
@@ -29,8 +29,13 @@ public class RewardController {
             );
             return ResponseEntity.ok(RewardDTO.from(savedModel));
         }
-        else
-            return ResponseEntity.ok(RewardDTO.from(rewardRepository.updateReward(userId, v).get()));
+        else {
+            rewardRepository.updateReward(userId, v);
+            // 업데이트 후 최신 정보 조회
+            RewardModel updatedModel = rewardRepository.findByUserId(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("리워드 정보를 찾을 수 없습니다."));
+            return ResponseEntity.ok(RewardDTO.from(updatedModel));
+        }
     }
 
     @PostMapping("/insert")

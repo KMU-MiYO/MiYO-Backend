@@ -53,4 +53,13 @@ public interface EmpathyReadRepository extends JpaRepository<EmpathyReadModel, L
      */
     @Query("SELECT e.postId, COUNT(e) FROM EmpathyReadModel e WHERE e.postId IN :postIds GROUP BY e.postId")
     List<Object[]> countByPostIds(@Param("postIds") List<Long> postIds);
+
+    /**
+     * 사용자가 공감한 게시글 ID 목록 조회
+     *
+     * @param userId 사용자 ID
+     * @return 공감한 게시글 ID 리스트
+     */
+    @Query("SELECT e.postId FROM EmpathyReadModel e WHERE e.userId = :userId")
+    List<Long> findPostIdsByUserId(@Param("userId") String userId);
 }

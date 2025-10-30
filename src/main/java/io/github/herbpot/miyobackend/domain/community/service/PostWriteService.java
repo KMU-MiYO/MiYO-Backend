@@ -85,15 +85,19 @@ public class PostWriteService {
         PostEvent event = PostEvent.createEvent(savedPost, userNickname);
         redisEventPublisher.publish(event);
 
-        if (!rewardRepository.existsByUserId(userId))
+        // 리워드 적립
+        if (!rewardRepository.existsByUserId(userId)) {
             rewardRepository.save(
-                RewardModel.builder()
-                        .userId(userId)
-                        .reward(1)
-                        .build()
+                    RewardModel.builder()
+                            .userId(userId)
+                            .reward(1)
+                            .build()
             );
-        else
+            log.info("New reward created for user: userId={}, reward=1", userId);
+        } else {
             rewardRepository.updateOneReward(userId);
+            log.info("Reward updated for user: userId={}, reward=+1", userId);
+        }
 
         // 5. 응답 생성 및 반환
         PostResponse response = PostResponse.from(savedPost);
