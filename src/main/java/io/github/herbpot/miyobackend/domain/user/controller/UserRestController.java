@@ -119,7 +119,7 @@ public class UserRestController {
         return ResponseEntity.ok().build();
     }
     @PatchMapping(value = "/{userId}/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> modifyProfileMyId(@PathVariable String userId,@RequestBody UpdateUserProfileRequest updateUserRequest) {
+    public ResponseEntity<Void> modifyProfileMyId(@PathVariable String userId,@ModelAttribute UpdateUserProfileRequest updateUserRequest) {
         userService.updateUserProfile(userId, updateUserRequest.getProfileImage());
         return ResponseEntity.ok().build();
     }
@@ -262,7 +262,7 @@ public class UserRestController {
     }
 
     @PatchMapping(value = "/my/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> modifyProfileMyId(@RequestBody UpdateUserProfileRequest updateUserRequest) {
+    public ResponseEntity<Void> modifyProfileMyId(@ModelAttribute UpdateUserProfileRequest updateUserRequest) {
         userService.updateUserProfile(userService.getCurrentUserId(), updateUserRequest.getProfileImage());
         return ResponseEntity.ok().build();
     }
