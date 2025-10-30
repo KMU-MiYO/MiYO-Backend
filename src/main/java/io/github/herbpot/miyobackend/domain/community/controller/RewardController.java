@@ -39,8 +39,14 @@ public class RewardController {
     }
 
     @PostMapping("/insert")
-    public ResponseEntity<RewardDTO> insertReward(@RequestBody RewardModel rewardModel) {
-        RewardModel savedModel = rewardRepository.save(rewardModel);
+    public ResponseEntity<RewardDTO> insertReward(@RequestBody RewardDTO rewardDTO) {
+        // DTO로 받아서 새로운 엔티티 생성 (id 없이)
+        RewardModel newReward = RewardModel.builder()
+                .userId(rewardDTO.getUserId())
+                .reward(rewardDTO.getReward())
+                .build();
+
+        RewardModel savedModel = rewardRepository.save(newReward);
         return ResponseEntity.ok(RewardDTO.from(savedModel));
     }
 }
