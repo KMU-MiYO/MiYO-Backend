@@ -81,4 +81,13 @@ public interface UserMissionProgressRepository extends JpaRepository<UserMission
     @Modifying
     @Query("UPDATE UserMissionProgress ump SET ump.currentCount = 0, ump.completed = false, ump.completedAt = null WHERE ump.missionId IN :missionIds")
     void resetProgressByMissionIds(@Param("missionIds") List<Long> missionIds);
+
+    /**
+     * 특정 미션의 모든 진행 현황 삭제 (미션 삭제 시)
+     *
+     * @param missionId 미션 ID
+     */
+    @Modifying
+    @Query("DELETE FROM UserMissionProgress ump WHERE ump.missionId = :missionId")
+    void deleteByMissionId(@Param("missionId") Long missionId);
 }

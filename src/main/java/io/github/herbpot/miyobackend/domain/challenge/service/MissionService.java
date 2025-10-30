@@ -1,5 +1,6 @@
 package io.github.herbpot.miyobackend.domain.challenge.service;
 
+import io.github.herbpot.miyobackend.domain.challenge.dto.CreateMissionRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.MissionResponse;
 import io.github.herbpot.miyobackend.domain.challenge.dto.UserMissionProgressResponse;
 import io.github.herbpot.miyobackend.domain.challenge.entity.Mission;
@@ -192,5 +193,52 @@ public class MissionService {
                     }
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 미션 생성 (관리자)
+     *
+     * @param request 미션 생성 요청
+     * @return 생성된 미션 정보
+     */
+    @Transactional
+    public MissionResponse createMission(CreateMissionRequest request) {
+        log.info("Creating mission: title={}, category={}, periodType={}",
+                request.getTitle(), request.getCategory(), request.getPeriodType());
+
+        // 날짜 유효성 검증
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new IllegalArgumentException("종료일은 시작일보다 이후여야 합니다.");
+        }
+
+        Mission mission = request.toEntity();
+        Mission savedMission = missionRepository.save(mission);
+
+        log.info("Mission created successfully: missionId={}", savedMission.getMissionId());
+        return MissionResponse.from(savedMission);
+    }
+
+    /**
+     * 미션 삭제 (관리자)
+     *
+     * @param missionId 삭제할 미션 ID
+     */
+    @Transactional
+    public void deleteMission(Long missionId) {
+        log.info("Deleting mission: missionId={}", missionId);
+
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> {
+                    log.warn("Mission not found: missionId={}", missionId);
+                    return new IllegalArgumentException("미션을 찾을 수 없습니다. (missionId: " + missionId + ")");
+                });
+
+        // 미션 삭제 시 관련된 UserMissionProgress도 삭제
+        // CASCADE 설정이 없으므로 명시적으로 삭제
+        log.info("Deleting related user progress records for missionId={}", missionId);
+        userMissionProgressRepository.deleteByMissionId(missionId);
+
+        missionRepository.delete(mission);
+        log.info("Mission deleted successfully: missionId={}", missionId);
     }
 }

@@ -63,10 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/v0/contests").permitAll()
 
                         // 관리자 API는 인증 불필요 (URL 비공개로 보안)
-                        .requestMatchers("/v0/contests/adminMiYO/**").permitAll()
-
-                        // 이미지 헬스체크는 인증 불필요
-                        .requestMatchers("/v0/images/health").permitAll()
+                        .requestMatchers("/v0/adminMiYO/**").permitAll()
 
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
