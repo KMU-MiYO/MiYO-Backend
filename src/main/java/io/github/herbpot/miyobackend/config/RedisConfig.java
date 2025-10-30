@@ -33,6 +33,9 @@ public class RedisConfig {
     @Value("${app.redis.topic.post-events:post-events-channel}")
     private String postEventsTopic;
 
+    @Value("${app.redis.topic.comment-events:comment-events-channel}")
+    private String commentEventsTopic;
+
     @Value("${app.redis.topic.empathy-events:empathy-events-channel}")
     private String empathyEventsTopic;
 
@@ -101,6 +104,15 @@ public class RedisConfig {
     }
 
     /**
+     * Redis 채널 토픽 정의 - Comment Events
+     * - 댓글 이벤트 발행/구독에 사용되는 채널
+     */
+    @Bean
+    public ChannelTopic commentEventsTopic() {
+        return new ChannelTopic(commentEventsTopic);
+    }
+
+    /**
      * Redis 채널 토픽 정의 - Empathy Events
      * - 공감 이벤트 발행/구독에 사용되는 채널
      */
@@ -121,7 +133,7 @@ public class RedisConfig {
     /**
      * RedisMessageListenerContainer 설정
      * - Redis Pub/Sub 메시지 리스너 컨테이너
-     * - postEventsTopic, empathyEventsTopic 모두 구독
+     * - postEventsTopic, commentEventsTopic, empathyEventsTopic 모두 구독
      * - 비동기적으로 메시지를 수신 처리
      */
     @Bean
@@ -129,13 +141,15 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory,
             MessageListenerAdapter messageListenerAdapter,
             ChannelTopic postEventsTopic,
+            ChannelTopic commentEventsTopic,
             ChannelTopic empathyEventsTopic) {
 
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
 
-        // 두 채널 토픽 모두에 메시지 리스너 등록
+        // 세 채널 토픽 모두에 메시지 리스너 등록
         container.addMessageListener(messageListenerAdapter, postEventsTopic);
+        container.addMessageListener(messageListenerAdapter, commentEventsTopic);
         container.addMessageListener(messageListenerAdapter, empathyEventsTopic);
 
         return container;

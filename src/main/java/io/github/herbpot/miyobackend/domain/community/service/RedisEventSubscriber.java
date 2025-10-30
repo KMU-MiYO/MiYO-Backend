@@ -1,6 +1,7 @@
 package io.github.herbpot.miyobackend.domain.community.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.herbpot.miyobackend.domain.community.dto.CommentEvent;
 import io.github.herbpot.miyobackend.domain.community.dto.EmpathyEvent;
 import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
 import io.github.herbpot.miyobackend.domain.community.entity.read.EmpathyReadModel;
@@ -19,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * RedisEventSubscriber
  * - Redis Pub/Sub의 Subscriber 역할
- * - Redis 채널에서 PostEvent, EmpathyEvent를 구독하여 Read Model 업데이트
+ * - Redis 채널에서 PostEvent, CommentEvent, EmpathyEvent를 구독하여 Read Model 업데이트
  * - RedisConfig의 MessageListenerAdapter에서 호출됨
  */
 @Slf4j
@@ -40,7 +41,7 @@ public class RedisEventSubscriber {
     /**
      * Redis 메시지 수신 핸들러
      * - RedisConfig의 MessageListenerAdapter가 이 메서드를 호출
-     * - JSON 메시지를 PostEvent 또는 EmpathyEvent 객체로 역직렬화
+     * - JSON 메시지를 PostEvent, CommentEvent 또는 EmpathyEvent 객체로 역직렬화
      * - 이벤트 타입에 따라 Read Model 생성 또는 삭제 처리
      *
      * @param message Redis에서 수신한 JSON 메시지
@@ -50,8 +51,15 @@ public class RedisEventSubscriber {
         try {
             log.info("Received Redis message: {}", message);
 
-            // 먼저 PostEvent로 시도
-            if (message.contains("\"postId\"") && message.contains("\"content\"")) {
+            // CommentEvent로 시도 (commentId와 parentPostId로 구분)
+            if (message.contains("\"commentId\"") && message.contains("\"parentPostId\"")) {
+                CommentEvent event = objectMapper.readValue(message, CommentEvent.class);
+                log.info("Deserialized CommentEvent: eventType={}, commentId={}, parentPostId={}",
+                        event.getEventType(), event.getCommentId(), event.getParentPostId());
+                handleCommentEvent(event);
+            }
+            // PostEvent로 시도 (postId와 content로 구분)
+            else if (message.contains("\"postId\"") && message.contains("\"content\"")) {
                 PostEvent event = objectMapper.readValue(message, PostEvent.class);
                 log.info("Deserialized PostEvent: eventType={}, postId={}",
                         event.getEventType(), event.getPostId());
@@ -92,6 +100,22 @@ public class RedisEventSubscriber {
                 break;
             default:
                 log.warn("Unknown PostEvent type: {}", event.getEventType());
+        }
+    }
+
+    /**
+     * CommentEvent 처리
+     */
+    private void handleCommentEvent(CommentEvent event) {
+        switch (event.getEventType()) {
+            case CREATE:
+                handleCommentCreateEvent(event);
+                break;
+            case DELETE:
+                handleCommentDeleteEvent(event);
+                break;
+            default:
+                log.warn("Unknown CommentEvent type: {}", event.getEventType());
         }
     }
 
@@ -204,6 +228,65 @@ public class RedisEventSubscriber {
                             log.info("Successfully deleted PostReadModel: postId={}", event.getPostId());
                         },
                         () -> log.warn("PostReadModel not found for deletion: postId={}", event.getPostId())
+                );
+    }
+
+    /**
+     * CommentEvent CREATE 처리
+     * - CommentEvent의 데이터를 기반으로 PostReadModel 생성
+     * - 댓글은 Post 엔티티를 재사용하므로 PostReadModel에 저장
+     * - Point 객체 생성: 경도(longitude), 위도(latitude) 순서 주의!
+     *
+     * @param event Comment CREATE 이벤트
+     */
+    private void handleCommentCreateEvent(CommentEvent event) {
+        log.info("Handling Comment CREATE event: commentId={}, parentPostId={}",
+                event.getCommentId(), event.getParentPostId());
+
+        // Point 객체 생성: Coordinate(X, Y) = Coordinate(경도, 위도)
+        Point location = GEOMETRY_FACTORY.createPoint(
+                new Coordinate(event.getLongitude(), event.getLatitude())
+        );
+
+        // PostReadModel 생성 및 저장 (댓글은 Post 엔티티 재사용)
+        PostReadModel readModel = PostReadModel.builder()
+                .postId(event.getCommentId())  // commentId를 postId로 저장
+                .userId(event.getUserId())
+                .userNickname(event.getUserNickname())
+                .parentPostId(event.getParentPostId())  // 부모 게시글 ID (필수)
+                .imagePath(null)  // 댓글에는 이미지 없음
+                .location(location)
+                .category(event.getCategory())
+                .title(event.getTitle())
+                .content(event.getContent())
+                .createdAt(event.getCreatedAt())
+                .empathyCount(0)
+                .build();
+
+        postReadRepository.save(readModel);
+
+        log.info("Successfully created CommentReadModel: commentId={}, parentPostId={}",
+                event.getCommentId(), event.getParentPostId());
+    }
+
+    /**
+     * CommentEvent DELETE 처리
+     * - PostReadModel에서 댓글 삭제
+     * - 존재하지 않는 댓글인 경우 경고 로그만 남김
+     *
+     * @param event Comment DELETE 이벤트
+     */
+    private void handleCommentDeleteEvent(CommentEvent event) {
+        log.info("Handling Comment DELETE event: commentId={}, parentPostId={}",
+                event.getCommentId(), event.getParentPostId());
+
+        postReadRepository.findById(event.getCommentId())
+                .ifPresentOrElse(
+                        readModel -> {
+                            postReadRepository.delete(readModel);
+                            log.info("Successfully deleted CommentReadModel: commentId={}", event.getCommentId());
+                        },
+                        () -> log.warn("CommentReadModel not found for deletion: commentId={}", event.getCommentId())
                 );
     }
 

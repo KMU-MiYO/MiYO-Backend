@@ -2,7 +2,7 @@ package io.github.herbpot.miyobackend.domain.community.service;
 
 import io.github.herbpot.miyobackend.client.UserServiceClient;
 import io.github.herbpot.miyobackend.domain.community.dto.CommentCreateRequest;
-import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
+import io.github.herbpot.miyobackend.domain.community.dto.CommentEvent;
 import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
  * - 댓글 생성, 삭제 등의 작업 담당
  * - 댓글은 Post 엔티티를 재사용하되, parentPostId를 설정하여 구분
  * - 댓글 작성 시 이미지는 받지 않고, 위치 정보는 부모 게시글로부터 상속
+ * - Redis Pub/Sub을 통해 CommentEvent 발행 (CQRS Read Model 업데이트)
  */
 @Slf4j
 @Service
@@ -89,8 +90,8 @@ public class CommentService {
                 savedComment.getPostId(), savedComment.getParentPostId());
 
         // 6. Redis 이벤트 발행 (비동기 Read Model 업데이트)
-        PostEvent event = PostEvent.createEvent(savedComment, userNickname);
-        redisEventPublisher.publish(event);
+        CommentEvent event = CommentEvent.createEvent(savedComment, userNickname);
+        redisEventPublisher.publishCommentEvent(event);
 
         // 7. 응답 생성 및 반환
         PostResponse response = PostResponse.from(savedComment);

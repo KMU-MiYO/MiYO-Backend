@@ -4,6 +4,14 @@ import io.github.herbpot.miyobackend.domain.community.dto.PageResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.UserActivityCountResponse;
 import io.github.herbpot.miyobackend.domain.community.service.UserActivityService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
  * - GET /v0/users/empathy: 사용자가 공감한 게시글 목록 조회
  * - JWT 인증 필수
  */
+@Tag(name = "사용자 활동", description = "사용자의 게시글, 댓글, 공감 활동 조회 API")
 @Slf4j
 @RestController
 @RequestMapping("/v0/users/posts")
@@ -43,10 +52,24 @@ public class UserActivityController {
      * @param authentication Spring Security Authentication (JWT에서 추출, 필수)
      * @return 사용자의 게시글 개수
      */
+    @Operation(
+            summary = "내 게시글 개수 조회",
+            description = "로그인한 사용자가 작성한 게시글 개수를 조회합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "게시글 개수 조회 성공",
+                    content = @Content(schema = @Schema(implementation = UserActivityCountResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping("/posts/count")
     public ResponseEntity<UserActivityCountResponse> getUserPostsCount(
+            @Parameter(description = "카테고리 리스트", example = "[\"NATURE\", \"CULTURE\"]")
             @RequestParam(required = false) java.util.List<String> categories,
-            Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication) {
 
         // JWT에서 userId 추출 (인증 필수)
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -80,13 +103,22 @@ public class UserActivityController {
      * @param authentication Spring Security Authentication (JWT에서 추출, 필수)
      * @return 사용자의 게시글 목록 (페이징)
      */
+    @Operation(
+            summary = "내 게시글 목록 조회",
+            description = "로그인한 사용자가 작성한 게시글 목록을 조회합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "게시글 목록 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping("/posts")
     public ResponseEntity<PageResponse<PostListResponse>> getUserPosts(
-            @RequestParam(required = false) java.util.List<String> categories,
-            @RequestParam(required = false, defaultValue = "latest") String sortBy,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            Authentication authentication) {
+            @Parameter(description = "카테고리 리스트") @RequestParam(required = false) java.util.List<String> categories,
+            @Parameter(description = "정렬 방식", example = "latest") @RequestParam(required = false, defaultValue = "latest") String sortBy,
+            @Parameter(description = "페이지 번호", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) Authentication authentication) {
 
         // JWT에서 userId 추출 (인증 필수)
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -118,10 +150,19 @@ public class UserActivityController {
      * @param authentication Spring Security Authentication (JWT에서 추출, 필수)
      * @return 사용자의 댓글 개수
      */
+    @Operation(
+            summary = "내 댓글 개수 조회",
+            description = "로그인한 사용자가 작성한 댓글 개수를 조회합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "댓글 개수 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping("/comments/count")
     public ResponseEntity<UserActivityCountResponse> getUserCommentsCount(
-            @RequestParam(required = false) java.util.List<String> categories,
-            Authentication authentication) {
+            @Parameter(description = "카테고리 리스트") @RequestParam(required = false) java.util.List<String> categories,
+            @Parameter(hidden = true) Authentication authentication) {
 
         // JWT에서 userId 추출 (인증 필수)
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -155,13 +196,22 @@ public class UserActivityController {
      * @param authentication Spring Security Authentication (JWT에서 추출, 필수)
      * @return 사용자의 댓글 목록 (페이징)
      */
+    @Operation(
+            summary = "내 댓글 목록 조회",
+            description = "로그인한 사용자가 작성한 댓글 목록을 조회합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "댓글 목록 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping("/comments")
     public ResponseEntity<PageResponse<PostListResponse>> getUserComments(
-            @RequestParam(required = false) java.util.List<String> categories,
-            @RequestParam(required = false, defaultValue = "latest") String sortBy,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            Authentication authentication) {
+            @Parameter(description = "카테고리 리스트") @RequestParam(required = false) java.util.List<String> categories,
+            @Parameter(description = "정렬 방식", example = "latest") @RequestParam(required = false, defaultValue = "latest") String sortBy,
+            @Parameter(description = "페이지 번호", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) Authentication authentication) {
 
         // JWT에서 userId 추출 (인증 필수)
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -193,10 +243,19 @@ public class UserActivityController {
      * @param authentication Spring Security Authentication (JWT에서 추출, 필수)
      * @return 사용자가 공감한 게시글 개수
      */
+    @Operation(
+            summary = "내가 공감한 게시글 개수 조회",
+            description = "로그인한 사용자가 공감한 게시글 개수를 조회합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "공감한 게시글 개수 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping("/empathy/count")
     public ResponseEntity<UserActivityCountResponse> getUserEmpathyCount(
-            @RequestParam(required = false) java.util.List<String> categories,
-            Authentication authentication) {
+            @Parameter(description = "카테고리 리스트") @RequestParam(required = false) java.util.List<String> categories,
+            @Parameter(hidden = true) Authentication authentication) {
 
         // JWT에서 userId 추출 (인증 필수)
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -230,13 +289,22 @@ public class UserActivityController {
      * @param authentication Spring Security Authentication (JWT에서 추출, 필수)
      * @return 사용자가 공감한 게시글 목록 (페이징)
      */
+    @Operation(
+            summary = "내가 공감한 게시글 목록 조회",
+            description = "로그인한 사용자가 공감한 게시글 목록을 조회합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "공감한 게시글 목록 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping("/empathy")
     public ResponseEntity<PageResponse<PostListResponse>> getUserEmpathy(
-            @RequestParam(required = false) java.util.List<String> categories,
-            @RequestParam(required = false, defaultValue = "latest") String sortBy,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            Authentication authentication) {
+            @Parameter(description = "카테고리 리스트") @RequestParam(required = false) java.util.List<String> categories,
+            @Parameter(description = "정렬 방식", example = "latest") @RequestParam(required = false, defaultValue = "latest") String sortBy,
+            @Parameter(description = "페이지 번호", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) Authentication authentication) {
 
         // JWT에서 userId 추출 (인증 필수)
         if (authentication == null || !authentication.isAuthenticated()) {

@@ -5,6 +5,14 @@ import io.github.herbpot.miyobackend.domain.community.dto.PageResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.service.CommentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
  * - 댓글 삭제는 POST /v0/posts/{postId} (DELETE) 사용 (게시글과 공통)
  * - JWT 인증 필요 (조회는 선택)
  */
+@Tag(name = "댓글", description = "댓글 작성 및 조회 API")
 @Slf4j
 @RestController
 @RequestMapping("/v0/comments")
@@ -45,10 +54,24 @@ public class CommentController {
      * @param authentication Spring Security Authentication (JWT에서 추출한 userId 포함)
      * @return 생성된 댓글 정보 (201 Created)
      */
+    @Operation(
+            summary = "댓글 작성",
+            description = "게시글에 댓글을 작성합니다. JWT 토큰이 필요하며, 위치 정보와 카테고리는 부모 게시글로부터 상속됩니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "댓글이 성공적으로 작성되었습니다",
+                    content = @Content(schema = @Schema(implementation = PostResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (Validation 실패 또는 부모 게시글 없음)"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (JWT 토큰 없음 또는 만료)")
+    })
     @PostMapping
     public ResponseEntity<PostResponse> createComment(
             @Valid @RequestBody CommentCreateRequest request,
-            Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication) {
 
         // JWT에서 userId 추출
         String userId = (String) authentication.getPrincipal();
@@ -76,10 +99,24 @@ public class CommentController {
      * @param size 페이지 크기 (default: 20)
      * @return 댓글 목록 (페이징)
      */
+    @Operation(
+            summary = "댓글 목록 조회",
+            description = "특정 게시글의 댓글 목록을 최신순으로 조회합니다. 페이징을 지원합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "댓글 목록 조회 성공"
+            ),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청")
+    })
     @GetMapping
     public ResponseEntity<PageResponse<PostListResponse>> getComments(
+            @Parameter(description = "부모 게시글 ID", example = "1", required = true)
             @RequestParam Long parentPostId,
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0")
             @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기", example = "20")
             @RequestParam(defaultValue = "20") int size) {
 
         log.info("GET /v0/comments - Getting comments: parentPostId={}, page={}, size={}",

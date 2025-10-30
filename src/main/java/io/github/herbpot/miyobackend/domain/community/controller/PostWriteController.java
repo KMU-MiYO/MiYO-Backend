@@ -3,6 +3,14 @@ package io.github.herbpot.miyobackend.domain.community.controller;
 import io.github.herbpot.miyobackend.domain.community.dto.PostCreateRequest;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.service.PostWriteService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
  * - DELETE /v0/posts: 게시글 삭제
  * - JWT 인증 필요
  */
+@Tag(name = "게시글 작성/삭제", description = "게시글 작성 및 삭제 API (CQRS Write)")
 @Slf4j
 @RestController
 @RequestMapping("/v0/posts")
@@ -38,10 +47,24 @@ public class PostWriteController {
      * @param authentication Spring Security Authentication (JWT에서 추출한 userId 포함)
      * @return 생성된 게시글 정보 (201 Created)
      */
+    @Operation(
+            summary = "게시글 작성",
+            description = "새로운 게시글을 작성합니다. JWT 토큰이 필요하며, 사용자 ID는 토큰에서 추출됩니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "게시글이 성공적으로 작성되었습니다",
+                    content = @Content(schema = @Schema(implementation = PostResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (Validation 실패)"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (JWT 토큰 없음 또는 만료)")
+    })
     @PostMapping
     public ResponseEntity<PostResponse> createPost(
             @Valid @RequestBody PostCreateRequest request,
-            Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication) {
 
         // JWT에서 userId 추출
         String userId = (String) authentication.getPrincipal();
@@ -68,10 +91,21 @@ public class PostWriteController {
      * @return 204 No Content
      * @throws IllegalArgumentException 게시글이 존재하지 않거나 권한이 없는 경우 (400 Bad Request로 변환됨)
      */
+    @Operation(
+            summary = "게시글 삭제",
+            description = "게시글을 삭제합니다. 본인이 작성한 게시글만 삭제 가능합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "게시글이 성공적으로 삭제되었습니다"),
+            @ApiResponse(responseCode = "400", description = "게시글이 존재하지 않거나 권한이 없습니다"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (JWT 토큰 없음 또는 만료)")
+    })
     @DeleteMapping
     public ResponseEntity<Void> deletePost(
+            @Parameter(description = "삭제할 게시글 ID", example = "1", required = true)
             @RequestParam Long postId,
-            Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication) {
 
         // JWT에서 userId 추출
         String userId = (String) authentication.getPrincipal();
