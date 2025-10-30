@@ -7,12 +7,14 @@ import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
 import io.github.herbpot.miyobackend.domain.community.entity.read.PostReadModel;
+import io.github.herbpot.miyobackend.domain.community.event.MissionEvent;
 import io.github.herbpot.miyobackend.domain.community.repository.read.EmpathyReadRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.read.PostReadRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.write.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Point;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class CommentService {
     private final EmpathyReadRepository empathyReadRepository;
     private final RedisEventPublisher redisEventPublisher;
     private final UserServiceClient userServiceClient;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     /**
      * 댓글 생성
@@ -92,7 +95,13 @@ public class CommentService {
         PostEvent event = PostEvent.createEvent(savedComment, userNickname);
         redisEventPublisher.publish(event);
 
-        // 7. 응답 생성 및 반환
+        // 7. Mission 이벤트 발행 (미션 진행도 업데이트)
+        MissionEvent missionEvent = MissionEvent.ofComment(userId, savedComment.getPostId());
+        applicationEventPublisher.publishEvent(missionEvent);
+        log.info("Mission event published: userId={}, commentId={}, actionType=COMMENT",
+                userId, savedComment.getPostId());
+
+        // 8. 응답 생성 및 반환
         PostResponse response = PostResponse.from(savedComment);
         return PostResponse.builder()
                 .postId(response.getPostId())

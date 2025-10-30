@@ -2,9 +2,11 @@ package io.github.herbpot.miyobackend.domain.community.service;
 
 import io.github.herbpot.miyobackend.domain.community.dto.EmpathyEvent;
 import io.github.herbpot.miyobackend.domain.community.entity.write.EmpathyData;
+import io.github.herbpot.miyobackend.domain.community.event.MissionEvent;
 import io.github.herbpot.miyobackend.domain.community.repository.write.EmpathyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class EmpathyService {
 
     private final EmpathyRepository empathyRepository;
     private final RedisEventPublisher redisEventPublisher;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     /**
      * 공감 토글
@@ -62,6 +65,12 @@ public class EmpathyService {
             // Redis 이벤트 발행 (CREATE)
             EmpathyEvent event = EmpathyEvent.createEvent(savedEmpathy);
             redisEventPublisher.publishEmpathyEvent(event);
+
+            // Mission 이벤트 발행 (미션 진행도 업데이트)
+            MissionEvent missionEvent = MissionEvent.ofEmpathy(userId, savedEmpathy.getEmpathyId());
+            applicationEventPublisher.publishEvent(missionEvent);
+            log.info("Mission event published: userId={}, empathyId={}, actionType=EMPATHY",
+                    userId, savedEmpathy.getEmpathyId());
 
             return true;
         }
