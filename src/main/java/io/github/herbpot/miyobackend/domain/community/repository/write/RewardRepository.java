@@ -11,7 +11,6 @@ public interface RewardRepository extends JpaRepository<RewardModel, String> {
 
     Optional<RewardModel> findByUserId(String userId);
     Boolean existsByUserId(String userId);
-    Optional<RewardModel> insert(RewardModel rewardModel);
 
     @Modifying
     @Query("update RewardModel r set r.reward = r.reward+1 where r.userId=?1")

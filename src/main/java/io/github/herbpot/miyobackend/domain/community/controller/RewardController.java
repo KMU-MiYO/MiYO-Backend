@@ -20,13 +20,14 @@ public class RewardController {
 
     @GetMapping("/update/{userId}")
     public ResponseEntity<RewardDTO> updateReward(@PathVariable("userId") String userId, @RequestParam("v") Integer v) {
-        if (rewardRepository.existsByUserId(userId)) {
-            return ResponseEntity.ok(RewardDTO.from(rewardRepository.insert(
+        if (!rewardRepository.existsByUserId(userId)) {
+            RewardModel savedModel = rewardRepository.save(
                     RewardModel.builder()
                             .userId(userId)
                             .reward(v)
                             .build()
-            ).get()));
+            );
+            return ResponseEntity.ok(RewardDTO.from(savedModel));
         }
         else
             return ResponseEntity.ok(RewardDTO.from(rewardRepository.updateReward(userId, v).get()));
@@ -34,7 +35,7 @@ public class RewardController {
 
     @PostMapping("/insert")
     public ResponseEntity<RewardDTO> insertReward(@RequestBody RewardModel rewardModel) {
-        rewardRepository.insert(rewardModel);
-        return ResponseEntity.ok(RewardDTO.from(rewardModel));
+        RewardModel savedModel = rewardRepository.save(rewardModel);
+        return ResponseEntity.ok(RewardDTO.from(savedModel));
     }
 }

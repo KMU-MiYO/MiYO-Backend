@@ -85,8 +85,8 @@ public class PostWriteService {
         PostEvent event = PostEvent.createEvent(savedPost, userNickname);
         redisEventPublisher.publish(event);
 
-        if (rewardRepository.existsByUserId(userId))
-            rewardRepository.insert(
+        if (!rewardRepository.existsByUserId(userId))
+            rewardRepository.save(
                 RewardModel.builder()
                         .userId(userId)
                         .reward(1)
