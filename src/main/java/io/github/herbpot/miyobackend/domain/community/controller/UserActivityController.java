@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Slf4j
 @RestController
-@RequestMapping("/v0/users")
+@RequestMapping("/v0/users/posts")
 @RequiredArgsConstructor
 public class UserActivityController {
 
