@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "User Badge", description = "사용자 뱃지 관리 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users")
+@RequestMapping("/users/bedge")
 public class UserBadgeRestController {
 
     private final UserBadgeService userBadgeService;
