@@ -72,4 +72,4 @@ spec:
 
         # User Service Configuration
         - name: USER_SERVICE_URL
-          value: "http://ing-default-samplealbing-bcdf6-110164755-b48ba1cb3cc4.kr.lb.naverncp.com"
+          value: miyo-backend-user-service
