@@ -74,7 +74,7 @@ public class UserService {
         checkAndInvalidateEmailVerificationStatus(request.getEmail());
 
         // 2. 사용자 ID 중복 검증
-        validateDuplicateUserId(request.getUserId());
+        validateDuplicateUserId(request.getUserId(), request.getEmail());
 
         // 3. 사용자 등록
         String encodedPassword = passwordEncoder.encode(request.getPassword());
@@ -240,8 +240,8 @@ public class UserService {
         return new ExistsResponse(userRepository.existsByUserId(id));
     }
 
-    private void validateDuplicateUserId(String userId) {
-        if (userRepository.existsByUserId(userId)) {
+    private void validateDuplicateUserId(String userId, String email) {
+        if (userRepository.existsByUserId(userId) && userRepository.existsByEmail(email)) {
             throw new CustomException(ErrorCode.DUPLICATE_USER_ID);
         }
     }

@@ -1,9 +1,9 @@
 package io.github.herbpot.miyobackend.domain.user.entity;
 
 import io.github.herbpot.miyobackend.config.Authoriy;
-import io.github.herbpot.miyobackend.domain.user.dto.request.UpdateUserRequest;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.validator.constraints.UniqueElements;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +24,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String userId;
 
+    @UniqueElements
     @Column(nullable = false)
     private String email;
 
