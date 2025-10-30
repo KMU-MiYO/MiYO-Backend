@@ -3,6 +3,7 @@ package io.github.herbpot.miyobackend.domain.community.service;
 import io.github.herbpot.miyobackend.client.UserServiceClient;
 import io.github.herbpot.miyobackend.domain.community.dto.CommentCreateRequest;
 import io.github.herbpot.miyobackend.domain.community.dto.CommentEvent;
+import io.github.herbpot.miyobackend.domain.community.dto.CommentResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
@@ -112,46 +113,99 @@ public class CommentService {
     }
 
     /**
-     * 특정 게시글의 댓글 목록 조회
-     * - parentPostId가 일치하는 댓글들만 조회
+     * 특정 게시글의 댓글 목록 조회 (대댓글 포함)
+     * - parentPostId가 일치하는 1단계 댓글들을 페이징하여 조회
+     * - 각 댓글의 대댓글(2단계)까지 포함하여 반환
      * - Read DB에서 조회
      * - 공감수 포함하여 반환
      * - 최신순으로 정렬
      *
      * @param parentPostId 부모 게시글 ID
      * @param pageable 페이징 정보
-     * @return 댓글 목록 (페이징)
+     * @return 댓글 목록 (대댓글 포함, 페이징)
      */
     @Transactional(value = "readTransactionManager", readOnly = true)
-    public Page<PostListResponse> getCommentsByPostId(Long parentPostId, Pageable pageable) {
+    public Page<CommentResponse> getCommentsByPostId(Long parentPostId, Pageable pageable) {
         log.info("Getting comments for post: parentPostId={}, page={}", parentPostId, pageable.getPageNumber());
 
-        // parentPostId로 댓글 조회 (Read DB)
+        // 1단계: parentPostId로 댓글 조회 (Read DB, 페이징)
         Page<PostReadModel> comments = postReadRepository.findByParentPostIdOrderByCreatedAtDesc(parentPostId, pageable);
 
         log.info("Found {} comments for post {}", comments.getTotalElements(), parentPostId);
 
-        // 댓글 ID 리스트 추출
-        java.util.List<Long> commentIds = comments.getContent().stream()
+        java.util.List<PostReadModel> commentList = comments.getContent();
+
+        if (commentList.isEmpty()) {
+            return new org.springframework.data.domain.PageImpl<>(
+                    java.util.List.of(),
+                    pageable,
+                    0
+            );
+        }
+
+        // 1단계 댓글 ID 리스트 추출
+        java.util.List<Long> commentIds = commentList.stream()
                 .map(PostReadModel::getPostId)
                 .toList();
 
-        // 공감수 조회 (한번에 조회) - Read DB 사용
-        java.util.Map<Long, Long> empathyCountMap = new java.util.HashMap<>();
+        // 1단계 댓글 공감수 조회 (한번에 조회)
+        java.util.Map<Long, Long> commentEmpathyCountMap = new java.util.HashMap<>();
         if (!commentIds.isEmpty()) {
-            java.util.List<Object[]> empathyCounts = empathyReadRepository.countByPostIds(commentIds);
-            for (Object[] row : empathyCounts) {
-                empathyCountMap.put((Long) row[0], (Long) row[1]);
+            java.util.List<Object[]> commentEmpathyCounts = empathyReadRepository.countByPostIds(commentIds);
+            for (Object[] row : commentEmpathyCounts) {
+                commentEmpathyCountMap.put((Long) row[0], (Long) row[1]);
             }
         }
 
-        // PostReadModel -> PostListResponse 변환 (닉네임, 공감수 포함)
-        java.util.List<PostListResponse> responseList = comments.getContent().stream()
-                .map(model -> PostListResponse.from(
-                        model,
-                        model.getUserNickname(),
-                        empathyCountMap.getOrDefault(model.getPostId(), 0L)
-                ))
+        // 2단계: 각 1단계 댓글의 대댓글 조회
+        java.util.Map<Long, java.util.List<PostReadModel>> repliesMap = new java.util.HashMap<>();
+        java.util.List<Long> allReplyIds = new java.util.ArrayList<>();
+
+        for (Long commentId : commentIds) {
+            org.springframework.data.domain.Pageable unpaged = org.springframework.data.domain.Pageable.unpaged();
+            org.springframework.data.domain.Page<PostReadModel> repliesPage = postReadRepository
+                    .findByParentPostIdOrderByCreatedAtDesc(commentId, unpaged);
+
+            java.util.List<PostReadModel> replies = repliesPage.getContent();
+            repliesMap.put(commentId, replies);
+
+            // 대댓글 ID 수집
+            replies.stream()
+                    .map(PostReadModel::getPostId)
+                    .forEach(allReplyIds::add);
+        }
+
+        // 대댓글 공감수 조회 (한번에 조회)
+        java.util.Map<Long, Long> replyEmpathyCountMap = new java.util.HashMap<>();
+        if (!allReplyIds.isEmpty()) {
+            java.util.List<Object[]> replyEmpathyCounts = empathyReadRepository.countByPostIds(allReplyIds);
+            for (Object[] row : replyEmpathyCounts) {
+                replyEmpathyCountMap.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        // PostReadModel -> CommentResponse 변환 (대댓글 포함, 최대 2단계)
+        java.util.List<CommentResponse> responseList = commentList.stream()
+                .map(model -> {
+                    CommentResponse comment = CommentResponse.from(
+                            model,
+                            commentEmpathyCountMap.getOrDefault(model.getPostId(), 0L),
+                            false  // 댓글 목록 조회는 인증 없이 가능하므로 공감 여부는 false
+                    );
+
+                    // 대댓글 조회 및 설정 (2단계까지만)
+                    java.util.List<PostReadModel> replyModels = repliesMap.getOrDefault(model.getPostId(), java.util.List.of());
+                    java.util.List<CommentResponse> replies = replyModels.stream()
+                            .map(replyModel -> CommentResponse.from(
+                                    replyModel,
+                                    replyEmpathyCountMap.getOrDefault(replyModel.getPostId(), 0L),
+                                    false  // 대댓글도 공감 여부는 false
+                            ))
+                            .toList();
+
+                    comment.setReplies(replies);
+                    return comment;
+                })
                 .toList();
 
         // Page 재구성

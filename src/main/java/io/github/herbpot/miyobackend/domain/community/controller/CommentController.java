@@ -1,6 +1,7 @@
 package io.github.herbpot.miyobackend.domain.community.controller;
 
 import io.github.herbpot.miyobackend.domain.community.dto.CommentCreateRequest;
+import io.github.herbpot.miyobackend.domain.community.dto.CommentResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PageResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostListResponse;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
@@ -89,20 +90,21 @@ public class CommentController {
     }
 
     /**
-     * 특정 게시글의 댓글 목록 조회
+     * 특정 게시글의 댓글 목록 조회 (대댓글 포함)
      * - Query Parameter로 parentPostId, page, size 수신
      * - 해당 게시글의 댓글만 조회
+     * - 각 댓글의 대댓글(2단계)까지 포함하여 반환
      * - 최신순으로 정렬
      * - 페이징 처리
      *
      * @param parentPostId 부모 게시글 ID
      * @param page 페이지 번호 (default: 0)
      * @param size 페이지 크기 (default: 20)
-     * @return 댓글 목록 (페이징)
+     * @return 댓글 목록 (대댓글 포함, 페이징)
      */
     @Operation(
             summary = "댓글 목록 조회",
-            description = "특정 게시글의 댓글 목록을 최신순으로 조회합니다. 페이징을 지원합니다."
+            description = "특정 게시글의 댓글 목록을 최신순으로 조회합니다. 각 댓글의 대댓글도 함께 반환됩니다. 페이징을 지원합니다."
     )
     @ApiResponses({
             @ApiResponse(
@@ -112,7 +114,7 @@ public class CommentController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
     @GetMapping
-    public ResponseEntity<PageResponse<PostListResponse>> getComments(
+    public ResponseEntity<PageResponse<CommentResponse>> getComments(
             @Parameter(description = "부모 게시글 ID", example = "1", required = true)
             @RequestParam Long parentPostId,
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0")
@@ -127,7 +129,7 @@ public class CommentController {
         Pageable pageable = PageRequest.of(page, size);
 
         // 서비스 호출
-        Page<PostListResponse> comments = commentService.getCommentsByPostId(parentPostId, pageable);
+        Page<CommentResponse> comments = commentService.getCommentsByPostId(parentPostId, pageable);
 
         log.info("GET /v0/comments - Found {} comments", comments.getTotalElements());
 
