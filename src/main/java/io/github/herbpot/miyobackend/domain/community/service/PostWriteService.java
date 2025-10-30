@@ -6,7 +6,9 @@ import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
 import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
 import io.github.herbpot.miyobackend.domain.community.entity.PostCategory;
+import io.github.herbpot.miyobackend.domain.community.entity.write.RewardModel;
 import io.github.herbpot.miyobackend.domain.community.repository.write.PostRepository;
+import io.github.herbpot.miyobackend.domain.community.repository.write.RewardRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -30,6 +32,7 @@ public class PostWriteService {
     private final PostRepository postRepository;
     private final RedisEventPublisher redisEventPublisher;
     private final UserServiceClient userServiceClient;
+    private final RewardRepository rewardRepository;
 
     /**
      * GeometryFactory: JTS Point 객체 생성을 위한 팩토리
@@ -81,6 +84,16 @@ public class PostWriteService {
         // 4. Redis 이벤트 발행 (비동기 Read Model 업데이트)
         PostEvent event = PostEvent.createEvent(savedPost, userNickname);
         redisEventPublisher.publish(event);
+
+        if (rewardRepository.existsByUserId(userId))
+            rewardRepository.insert(
+                RewardModel.builder()
+                        .userId(userId)
+                        .reward(1)
+                        .build()
+            );
+        else
+            rewardRepository.updateOneReward(userId);
 
         // 5. 응답 생성 및 반환
         PostResponse response = PostResponse.from(savedPost);
