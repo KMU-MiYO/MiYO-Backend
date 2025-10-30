@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -56,6 +57,53 @@ public class ObjectStorageService {
             s3Client.deleteObject(deleteObjectRequest);
         } catch (S3Exception e) {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "파일 삭제 중 오류가 발생했습니다.");
+        }
+    }
+
+    public String uploadBadgeImage(MultipartFile file) {
+        try {
+            if (file == null) return null;
+
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+
+            // UUID를 이용한 고유 파일명 생성
+            String uniqueFileName = "badges/" + UUID.randomUUID() + extension;
+
+            // S3 업로드 요청 생성
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(uniqueFileName)
+                    .contentType(file.getContentType())
+                    .build();
+
+            // 파일 업로드 실행
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
+
+            // 업로드된 파일의 URL 반환
+            return "http://contest90-image-bucket.s3-website.kr.object.ncloudstorage.com/" + uniqueFileName;
+
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.FILE_UPLOAD_ERROR);
+        }
+    }
+
+    public void removeBadgeImage(String imageUrl) {
+        try {
+            // URL에서 파일명 추출
+            String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+            String key = "badges/" + fileName;
+
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build();
+            s3Client.deleteObject(deleteObjectRequest);
+        } catch (S3Exception e) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "뱃지 이미지 삭제 중 오류가 발생했습니다.");
         }
     }
 }
