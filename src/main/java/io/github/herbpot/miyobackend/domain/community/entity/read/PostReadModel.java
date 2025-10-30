@@ -51,7 +51,7 @@ public class PostReadModel {
      * - 조회 성능 최적화를 위한 비정규화 필드
      * - User Service에서 가져온 닉네임 저장
      */
-    @Column(name = "user_nickname", nullable = false, length = 50)
+    @Column(name = "nickname", nullable = false, length = 50)
     private String userNickname;
 
     /**
