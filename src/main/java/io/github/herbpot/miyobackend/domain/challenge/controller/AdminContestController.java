@@ -4,6 +4,8 @@ import io.github.herbpot.miyobackend.domain.challenge.dto.ContestCreateRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestResponse;
 import io.github.herbpot.miyobackend.domain.challenge.dto.CreateMissionRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.MissionResponse;
+import io.github.herbpot.miyobackend.domain.challenge.dto.UpdateUserMissionProgressRequest;
+import io.github.herbpot.miyobackend.domain.challenge.dto.UserMissionProgressResponse;
 import io.github.herbpot.miyobackend.domain.challenge.service.ContestService;
 import io.github.herbpot.miyobackend.domain.challenge.service.MissionService;
 import jakarta.validation.Valid;
@@ -12,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * AdminContestController
@@ -90,6 +94,81 @@ public class AdminContestController {
         missionService.deleteMission(missionId);
 
         log.info("Mission deleted successfully: missionId={}", missionId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 특정 유저의 미션 진행도 조회
+     *
+     * @param userId 사용자 ID
+     * @return 미션 진행도 목록
+     */
+    @GetMapping("/users/{userId}/missions")
+    public ResponseEntity<List<UserMissionProgressResponse>> getUserMissions(@PathVariable String userId) {
+        log.info("GET /v0/adminMiYO/users/{}/missions - Getting user missions", userId);
+
+        List<UserMissionProgressResponse> missions = missionService.getUserMissionsForAdmin(userId);
+
+        log.info("Retrieved {} missions for user: userId={}", missions.size(), userId);
+        return ResponseEntity.ok(missions);
+    }
+
+    /**
+     * 특정 유저의 특정 미션 진행도 수정
+     *
+     * @param userId 사용자 ID
+     * @param missionId 미션 ID
+     * @param request 진행도 수정 요청
+     * @return 수정된 진행도 정보
+     */
+    @PutMapping("/users/{userId}/missions/{missionId}")
+    public ResponseEntity<UserMissionProgressResponse> updateUserMissionProgress(
+            @PathVariable String userId,
+            @PathVariable Long missionId,
+            @Valid @RequestBody UpdateUserMissionProgressRequest request) {
+        log.info("PUT /v0/adminMiYO/users/{}/missions/{} - Updating user mission progress", userId, missionId);
+
+        UserMissionProgressResponse response = missionService.updateUserMissionProgress(userId, missionId, request);
+
+        log.info("User mission progress updated successfully: userId={}, missionId={}", userId, missionId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 특정 유저의 특정 미션 진행도 초기화
+     *
+     * @param userId 사용자 ID
+     * @param missionId 미션 ID
+     * @return 204 No Content
+     */
+    @PatchMapping("/users/{userId}/missions/{missionId}/reset")
+    public ResponseEntity<Void> resetUserMissionProgress(
+            @PathVariable String userId,
+            @PathVariable Long missionId) {
+        log.info("PATCH /v0/adminMiYO/users/{}/missions/{}/reset - Resetting user mission progress", userId, missionId);
+
+        missionService.resetUserMissionProgress(userId, missionId);
+
+        log.info("User mission progress reset successfully: userId={}, missionId={}", userId, missionId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 특정 유저의 특정 미션 진행도 삭제
+     *
+     * @param userId 사용자 ID
+     * @param missionId 미션 ID
+     * @return 204 No Content
+     */
+    @DeleteMapping("/users/{userId}/missions/{missionId}")
+    public ResponseEntity<Void> deleteUserMissionProgress(
+            @PathVariable String userId,
+            @PathVariable Long missionId) {
+        log.info("DELETE /v0/adminMiYO/users/{}/missions/{} - Deleting user mission progress", userId, missionId);
+
+        missionService.deleteUserMissionProgress(userId, missionId);
+
+        log.info("User mission progress deleted successfully: userId={}, missionId={}", userId, missionId);
         return ResponseEntity.noContent().build();
     }
 }

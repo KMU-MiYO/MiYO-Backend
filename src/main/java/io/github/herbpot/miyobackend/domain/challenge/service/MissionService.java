@@ -2,6 +2,7 @@ package io.github.herbpot.miyobackend.domain.challenge.service;
 
 import io.github.herbpot.miyobackend.domain.challenge.dto.CreateMissionRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.MissionResponse;
+import io.github.herbpot.miyobackend.domain.challenge.dto.UpdateUserMissionProgressRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.UserMissionProgressResponse;
 import io.github.herbpot.miyobackend.domain.challenge.entity.Mission;
 import io.github.herbpot.miyobackend.domain.challenge.entity.UserMissionProgress;
@@ -240,5 +241,117 @@ public class MissionService {
 
         missionRepository.delete(mission);
         log.info("Mission deleted successfully: missionId={}", missionId);
+    }
+
+    /**
+     * 특정 유저의 미션 진행도 조회 (관리자)
+     *
+     * @param userId 사용자 ID
+     * @return 미션 진행도 목록
+     */
+    @Transactional(readOnly = true)
+    public List<UserMissionProgressResponse> getUserMissionsForAdmin(String userId) {
+        log.info("Admin getting user missions: userId={}", userId);
+
+        return getAllUserProgress(userId);
+    }
+
+    /**
+     * 특정 유저의 특정 미션 진행도 수정 (관리자)
+     *
+     * @param userId 사용자 ID
+     * @param missionId 미션 ID
+     * @param request 진행도 수정 요청
+     * @return 수정된 진행도 정보
+     */
+    @Transactional
+    public UserMissionProgressResponse updateUserMissionProgress(String userId, Long missionId,
+                                                                  UpdateUserMissionProgressRequest request) {
+        log.info("Admin updating user mission progress: userId={}, missionId={}, currentCount={}, completed={}",
+                userId, missionId, request.getCurrentCount(), request.getCompleted());
+
+        // 미션 존재 확인
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> {
+                    log.warn("Mission not found: missionId={}", missionId);
+                    return new IllegalArgumentException("미션을 찾을 수 없습니다. (missionId: " + missionId + ")");
+                });
+
+        // 유저 진행도 조회 또는 생성
+        UserMissionProgress progress = userMissionProgressRepository
+                .findByMissionIdAndUserId(missionId, userId)
+                .orElseGet(() -> {
+                    log.info("Creating new progress record for userId={}, missionId={}", userId, missionId);
+                    UserMissionProgress newProgress = UserMissionProgress.createInitial(missionId, userId);
+                    return userMissionProgressRepository.save(newProgress);
+                });
+
+        // 진행도 업데이트
+        progress.updateProgress(request.getCurrentCount(), request.getCompleted());
+        userMissionProgressRepository.save(progress);
+
+        log.info("User mission progress updated successfully: userId={}, missionId={}", userId, missionId);
+
+        return UserMissionProgressResponse.withMissionInfo(
+                progress,
+                mission.getTitle(),
+                mission.getGoalCount()
+        );
+    }
+
+    /**
+     * 특정 유저의 특정 미션 진행도 초기화 (관리자)
+     *
+     * @param userId 사용자 ID
+     * @param missionId 미션 ID
+     */
+    @Transactional
+    public void resetUserMissionProgress(String userId, Long missionId) {
+        log.info("Admin resetting user mission progress: userId={}, missionId={}", userId, missionId);
+
+        // 미션 존재 확인
+        missionRepository.findById(missionId)
+                .orElseThrow(() -> {
+                    log.warn("Mission not found: missionId={}", missionId);
+                    return new IllegalArgumentException("미션을 찾을 수 없습니다. (missionId: " + missionId + ")");
+                });
+
+        // 유저 진행도 조회
+        UserMissionProgress progress = userMissionProgressRepository
+                .findByMissionIdAndUserId(missionId, userId)
+                .orElseThrow(() -> {
+                    log.warn("User mission progress not found: userId={}, missionId={}", userId, missionId);
+                    return new IllegalArgumentException("유저의 미션 진행도를 찾을 수 없습니다.");
+                });
+
+        // 진행도 리셋
+        progress.reset();
+        userMissionProgressRepository.save(progress);
+
+        log.info("User mission progress reset successfully: userId={}, missionId={}", userId, missionId);
+    }
+
+    /**
+     * 특정 유저의 특정 미션 진행도 삭제 (관리자)
+     *
+     * @param userId 사용자 ID
+     * @param missionId 미션 ID
+     */
+    @Transactional
+    public void deleteUserMissionProgress(String userId, Long missionId) {
+        log.info("Admin deleting user mission progress: userId={}, missionId={}", userId, missionId);
+
+        // 유저 진행도 조회
+        UserMissionProgress progress = userMissionProgressRepository
+                .findByMissionIdAndUserId(missionId, userId)
+                .orElseThrow(() -> {
+                    log.warn("User mission progress not found: userId={}, missionId={}", userId, missionId);
+                    return new IllegalArgumentException("유저의 미션 진행도를 찾을 수 없습니다.");
+                });
+
+        // 진행도 삭제
+        userMissionProgressRepository.delete(progress);
+
+        log.info("User mission progress deleted successfully: userId={}, missionId={}", userId, missionId);
     }
 }

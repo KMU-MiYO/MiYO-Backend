@@ -116,4 +116,24 @@ public class UserMissionProgress {
         this.completed = false;
         this.completedAt = null;
     }
+
+    /**
+     * 진행 현황 업데이트 (관리자용)
+     * @param currentCount 새로운 진행 횟수
+     * @param completed 새로운 완료 여부
+     */
+    public void updateProgress(Integer currentCount, Boolean completed) {
+        this.currentCount = currentCount;
+        this.completed = completed;
+
+        // 완료 상태로 변경되면 완료 시각 설정
+        if (completed && this.completedAt == null) {
+            this.completedAt = LocalDateTime.now();
+        }
+
+        // 미완료 상태로 변경되면 완료 시각 제거
+        if (!completed) {
+            this.completedAt = null;
+        }
+    }
 }
