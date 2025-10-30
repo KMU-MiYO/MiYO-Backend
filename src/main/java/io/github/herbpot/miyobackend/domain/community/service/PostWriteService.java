@@ -7,7 +7,6 @@ import io.github.herbpot.miyobackend.domain.community.dto.PostResponse;
 import io.github.herbpot.miyobackend.domain.community.entity.write.Post;
 import io.github.herbpot.miyobackend.domain.community.entity.PostCategory;
 import io.github.herbpot.miyobackend.domain.community.entity.write.RewardModel;
-import io.github.herbpot.miyobackend.domain.community.event.MissionEvent;
 import io.github.herbpot.miyobackend.domain.community.repository.write.PostRepository;
 import io.github.herbpot.miyobackend.domain.community.repository.write.RewardRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +15,6 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +33,6 @@ public class PostWriteService {
     private final RedisEventPublisher redisEventPublisher;
     private final UserServiceClient userServiceClient;
     private final RewardRepository rewardRepository;
-    private final ApplicationEventPublisher applicationEventPublisher;
 
     /**
      * GeometryFactory: JTS Point 객체 생성을 위한 팩토리
@@ -88,12 +85,7 @@ public class PostWriteService {
         PostEvent event = PostEvent.createEvent(savedPost, userNickname);
         redisEventPublisher.publish(event);
 
-        // 5. Mission 이벤트 발행 (미션 진행도 업데이트)
-        MissionEvent missionEvent = MissionEvent.ofProposal(userId, savedPost.getPostId());
-        applicationEventPublisher.publishEvent(missionEvent);
-        log.info("Mission event published: userId={}, postId={}, actionType=PROPOSAL", userId, savedPost.getPostId());
-
-        // 6. 리워드 적립
+        // 리워드 적립
         if (!rewardRepository.existsByUserId(userId)) {
             rewardRepository.save(
                     RewardModel.builder()
@@ -107,7 +99,7 @@ public class PostWriteService {
             log.info("Reward updated for user: userId={}, reward=+1", userId);
         }
 
-        // 7. 응답 생성 및 반환
+        // 5. 응답 생성 및 반환
         PostResponse response = PostResponse.from(savedPost);
         return PostResponse.builder()
                 .postId(response.getPostId())
