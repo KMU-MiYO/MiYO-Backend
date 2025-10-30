@@ -35,6 +35,16 @@ public class ContestPostSummaryResponse {
     private String userId;
 
     /**
+     * 작성자 닉네임
+     */
+    private String userNickname;
+
+    /**
+     * 카테고리
+     */
+    private String category;
+
+    /**
      * 이미지 경로
      */
     private String imagePath;
@@ -60,6 +70,26 @@ public class ContestPostSummaryResponse {
                 .id(contestPost.getId())
                 .title(contestPost.getTitle())
                 .userId(contestPost.getUserId())
+                .imagePath(contestPost.getImagePath())
+                .empathy(contestPost.getEmpathy())
+                .createdAt(contestPost.getCreatedAt())
+                .build();
+    }
+
+    /**
+     * ContestPost 엔티티와 사용자 닉네임으로부터 ContestPostSummaryResponse 생성
+     *
+     * @param contestPost ContestPost 엔티티
+     * @param userNickname 사용자 닉네임
+     * @return ContestPostSummaryResponse
+     */
+    public static ContestPostSummaryResponse fromWithNickname(ContestPost contestPost, String userNickname) {
+        return ContestPostSummaryResponse.builder()
+                .id(contestPost.getId())
+                .title(contestPost.getTitle())
+                .userId(contestPost.getUserId())
+                .userNickname(userNickname)
+                .category(contestPost.getCategory())
                 .imagePath(contestPost.getImagePath())
                 .empathy(contestPost.getEmpathy())
                 .createdAt(contestPost.getCreatedAt())

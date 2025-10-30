@@ -56,7 +56,7 @@ public class ContestPostService {
      * @return 생성된 제출물 정보
      */
     @Transactional
-    public ContestPostResponse createPost(Long contestId, ContestPostCreateRequest request, String userId) {
+    public ContestPostResponse createPost(Long contestId, ContestPostCreateRequest request, String userId, String token) {
         log.info("Creating contest post: contestId={}, userId={}", contestId, userId);
 
         // 공모전 존재 여부 확인
@@ -78,7 +78,7 @@ public class ContestPostService {
         }
 
         // 사용자 닉네임 조회
-        String userNickname = userServiceClient.getUserNickname(userId);
+        String userNickname = userServiceClient.getUserNickname(userId, token);
 
         // 이미지 처리: imagePath가 있으면 그대로 사용, 없으면 base64Image를 업로드
         String finalImagePath = request.getImagePath();
@@ -133,16 +133,17 @@ public class ContestPostService {
      *
      * @param contestId 공모전 ID
      * @param pageable 페이징 정보
+     * @param token Authorization 토큰
      * @return 제출물 목록
      */
     @Transactional(readOnly = true)
-    public Page<ContestPostResponse> getPostsByContestId(Long contestId, Pageable pageable) {
+    public Page<ContestPostResponse> getPostsByContestId(Long contestId, Pageable pageable, String token) {
         log.info("Getting contest posts: contestId={}, page={}", contestId, pageable.getPageNumber());
 
         Page<ContestPost> posts = contestPostRepository.findByContestId(contestId, pageable);
 
         return posts.map(post -> {
-            String userNickname = userServiceClient.getUserNickname(post.getUserId());
+            String userNickname = userServiceClient.getUserNickname(post.getUserId(), token);
             return ContestPostResponse.fromWithNickname(post, userNickname);
         });
     }
@@ -158,7 +159,7 @@ public class ContestPostService {
      * @return 제출물 요약 목록
      */
     @Transactional(readOnly = true)
-    public Page<ContestPostSummaryResponse> getPostsSummaryByContestId(Long contestId, String sortBy, Pageable pageable) {
+    public Page<ContestPostSummaryResponse> getPostsSummaryByContestId(Long contestId, String sortBy, Pageable pageable, String token) {
         log.info("Getting contest posts summary: contestId={}, sortBy={}, page={}", contestId, sortBy, pageable.getPageNumber());
 
         // 정렬 기준 설정
@@ -180,23 +181,27 @@ public class ContestPostService {
 
         Page<ContestPost> posts = contestPostRepository.findByContestIdWithSort(contestId, pageableWithSort);
 
-        return posts.map(ContestPostSummaryResponse::from);
+        return posts.map(post -> {
+            String userNickname = userServiceClient.getUserNickname(post.getUserId(), token);
+            return ContestPostSummaryResponse.fromWithNickname(post, userNickname);
+        });
     }
 
     /**
      * 공모전 제출물 상세 조회
      *
      * @param postId 제출물 ID
+     * @param token Authorization 토큰
      * @return 제출물 상세 정보
      */
     @Transactional(readOnly = true)
-    public ContestPostResponse getPostById(Long postId) {
+    public ContestPostResponse getPostById(Long postId, String token) {
         log.info("Getting contest post: postId={}", postId);
 
         ContestPost post = contestPostRepository.findById(postId)
                 .orElseThrow(() -> new ContestPostNotFoundException(postId));
 
-        String userNickname = userServiceClient.getUserNickname(post.getUserId());
+        String userNickname = userServiceClient.getUserNickname(post.getUserId(), token);
         return ContestPostResponse.fromWithNickname(post, userNickname);
     }
 
@@ -206,10 +211,11 @@ public class ContestPostService {
      * @param parentPostId 부모 제출물 ID
      * @param request 댓글 작성 요청
      * @param userId 작성자 ID
+     * @param token Authorization 토큰
      * @return 생성된 댓글 정보
      */
     @Transactional
-    public ContestPostResponse createComment(Long parentPostId, ContestPostCommentRequest request, String userId) {
+    public ContestPostResponse createComment(Long parentPostId, ContestPostCommentRequest request, String userId, String token) {
         log.info("Creating comment on contest post: parentPostId={}, userId={}", parentPostId, userId);
 
         // 부모 제출물 존재 여부 확인
@@ -217,7 +223,7 @@ public class ContestPostService {
                 .orElseThrow(() -> new ContestPostNotFoundException(parentPostId));
 
         // 사용자 닉네임 조회
-        String userNickname = userServiceClient.getUserNickname(userId);
+        String userNickname = userServiceClient.getUserNickname(userId, token);
 
         // 댓글 생성 (부모의 contestId, title, category 상속)
         ContestPost comment = ContestPost.builder()
@@ -257,16 +263,17 @@ public class ContestPostService {
      *
      * @param parentPostId 부모 제출물 ID
      * @param pageable 페이징 정보
+     * @param token Authorization 토큰
      * @return 댓글 목록
      */
     @Transactional(readOnly = true)
-    public Page<ContestPostResponse> getCommentsByPostId(Long parentPostId, Pageable pageable) {
+    public Page<ContestPostResponse> getCommentsByPostId(Long parentPostId, Pageable pageable, String token) {
         log.info("Getting comments: parentPostId={}, page={}", parentPostId, pageable.getPageNumber());
 
         Page<ContestPost> comments = contestPostRepository.findCommentsByParentPostId(parentPostId, pageable);
 
         return comments.map(comment -> {
-            String userNickname = userServiceClient.getUserNickname(comment.getUserId());
+            String userNickname = userServiceClient.getUserNickname(comment.getUserId(), token);
             return ContestPostResponse.fromWithNickname(comment, userNickname);
         });
     }

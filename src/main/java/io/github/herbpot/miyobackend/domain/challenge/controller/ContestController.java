@@ -217,12 +217,13 @@ public class ContestController {
             @Parameter(description = "공모전 ID", required = true)
             @PathVariable Long contestId,
             @Valid @RequestBody ContestPostCreateRequest request,
-            @Parameter(hidden = true) Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(hidden = true) @RequestHeader("Authorization") String token) {
 
         String userId = (String) authentication.getPrincipal();
         log.info("POST /v0/contests/{}/posts - Creating post: userId={}", contestId, userId);
 
-        ContestPostResponse response = contestPostService.createPost(contestId, request, userId);
+        ContestPostResponse response = contestPostService.createPost(contestId, request, userId, token);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -262,11 +263,13 @@ public class ContestController {
             @Parameter(description = "정렬 기준 (createdAt 또는 empathy)", example = "createdAt")
             @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
             @Parameter(description = "페이징 정보 (기본 20개)")
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable,
+            @Parameter(hidden = true)
+            @RequestHeader("Authorization") String token) {
 
         log.info("GET /v0/contests/{}/posts - Getting posts: sortBy={}, page={}", contestId, sortBy, pageable.getPageNumber());
 
-        Page<ContestPostSummaryResponse> posts = contestPostService.getPostsSummaryByContestId(contestId, sortBy, pageable);
+        Page<ContestPostSummaryResponse> posts = contestPostService.getPostsSummaryByContestId(contestId, sortBy, pageable, token);
         return ResponseEntity.ok(posts);
     }
 
@@ -299,11 +302,12 @@ public class ContestController {
             @Parameter(description = "공모전 ID", required = true)
             @PathVariable Long contestId,
             @Parameter(description = "제출물 ID", required = true)
-            @PathVariable Long postId) {
+            @PathVariable Long postId,
+            @Parameter(hidden = true) @RequestHeader("Authorization") String token) {
 
         log.info("GET /v0/contests/{}/posts/{} - Getting post details", contestId, postId);
 
-        ContestPostResponse post = contestPostService.getPostById(postId);
+        ContestPostResponse post = contestPostService.getPostById(postId, token);
         return ResponseEntity.ok(post);
     }
 
@@ -339,12 +343,13 @@ public class ContestController {
             @Parameter(description = "제출물 ID", required = true)
             @PathVariable Long postId,
             @Valid @RequestBody ContestPostCommentRequest request,
-            @Parameter(hidden = true) Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(hidden = true) @RequestHeader("Authorization") String token) {
 
         String userId = (String) authentication.getPrincipal();
         log.info("POST /v0/contests/posts/{}/comments - Creating comment: userId={}", postId, userId);
 
-        ContestPostResponse response = contestPostService.createComment(postId, request, userId);
+        ContestPostResponse response = contestPostService.createComment(postId, request, userId, token);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -378,11 +383,12 @@ public class ContestController {
             @Parameter(description = "제출물 ID", required = true)
             @PathVariable Long postId,
             @Parameter(description = "페이징 정보 (기본 20개, 시간순 정렬)")
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable,
+            @Parameter(hidden = true) @RequestHeader("Authorization") String token) {
 
         log.info("GET /v0/contests/posts/{}/comments - Getting comments: page={}", postId, pageable.getPageNumber());
 
-        Page<ContestPostResponse> comments = contestPostService.getCommentsByPostId(postId, pageable);
+        Page<ContestPostResponse> comments = contestPostService.getCommentsByPostId(postId, pageable, token);
         return ResponseEntity.ok(comments);
     }
 
