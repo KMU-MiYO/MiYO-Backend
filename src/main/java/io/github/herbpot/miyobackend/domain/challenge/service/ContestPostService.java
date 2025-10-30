@@ -1,8 +1,11 @@
 package io.github.herbpot.miyobackend.domain.challenge.service;
 
 import io.github.herbpot.miyobackend.client.UserServiceClient;
+import io.github.herbpot.miyobackend.domain.challenge.dto.ContestCommentEvent;
+import io.github.herbpot.miyobackend.domain.challenge.dto.ContestEmpathyEvent;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCommentRequest;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCreateRequest;
+import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostEvent;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostResponse;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostSummaryResponse;
 import io.github.herbpot.miyobackend.domain.challenge.entity.ContestPost;
@@ -39,6 +42,7 @@ public class ContestPostService {
     private final UserServiceClient userServiceClient;
     private final MissionValidatorFactory missionValidatorFactory;
     private final io.github.herbpot.miyobackend.client.NCPObjectStorageClient ncpObjectStorageClient;
+    private final ChallengeEventPublisher challengeEventPublisher;
 
     /**
      * 공모전 제출물 작성
@@ -105,7 +109,11 @@ public class ContestPostService {
         ContestPost savedPost = contestPostRepository.save(contestPost);
         log.info("Contest post saved: postId={}, contestId={}", savedPost.getId(), contestId);
 
-        // 미션 진행도 업데이트 (proposal 미션)
+        // Redis 이벤트 발행 (비동기 미션 업데이트)
+        ContestPostEvent event = ContestPostEvent.createEvent(savedPost);
+        challengeEventPublisher.publishContestPostEvent(event);
+
+        // 기존 동기식 미션 진행도 업데이트 (proposal 미션) - 하이브리드 방식
         try {
             var validator = missionValidatorFactory.getValidator("proposal");
             if (validator != null) {
@@ -226,7 +234,11 @@ public class ContestPostService {
         ContestPost savedComment = contestPostRepository.save(comment);
         log.info("Comment saved: commentId={}, parentPostId={}", savedComment.getId(), parentPostId);
 
-        // 미션 진행도 업데이트 (comment 미션)
+        // Redis 이벤트 발행 (비동기 미션 업데이트)
+        ContestCommentEvent event = ContestCommentEvent.createEvent(savedComment);
+        challengeEventPublisher.publishContestCommentEvent(event);
+
+        // 기존 동기식 미션 진행도 업데이트 (comment 미션) - 하이브리드 방식
         try {
             var validator = missionValidatorFactory.getValidator("comment");
             if (validator != null) {
@@ -272,10 +284,17 @@ public class ContestPostService {
         ContestPost post = contestPostRepository.findById(postId)
                 .orElseThrow(() -> new ContestPostNotFoundException(postId));
 
+        Integer previousCount = post.getEmpathy();
         post.incrementEmpathy();
-        contestPostRepository.save(post);
+        ContestPost savedPost = contestPostRepository.save(post);
+        Integer newCount = savedPost.getEmpathy();
 
-        // 미션 진행도 업데이트 (empathy 미션)
+        // Redis 이벤트 발행 (비동기 미션 업데이트)
+        ContestEmpathyEvent event = ContestEmpathyEvent.createEvent(
+                postId, userId, previousCount, newCount);
+        challengeEventPublisher.publishContestEmpathyEvent(event);
+
+        // 기존 동기식 미션 진행도 업데이트 (empathy 미션) - 하이브리드 방식
         try {
             var validator = missionValidatorFactory.getValidator("empathy");
             if (validator != null) {
@@ -286,7 +305,7 @@ public class ContestPostService {
             log.error("Failed to update mission progress", e);
         }
 
-        log.info("Empathy added: postId={}, currentEmpathy={}", postId, post.getEmpathy());
+        log.info("Empathy added: postId={}, currentEmpathy={}", postId, savedPost.getEmpathy());
     }
 
     /**
@@ -302,9 +321,16 @@ public class ContestPostService {
         ContestPost post = contestPostRepository.findById(postId)
                 .orElseThrow(() -> new ContestPostNotFoundException(postId));
 
+        Integer previousCount = post.getEmpathy();
         post.decrementEmpathy();
-        contestPostRepository.save(post);
+        ContestPost savedPost = contestPostRepository.save(post);
+        Integer newCount = savedPost.getEmpathy();
 
-        log.info("Empathy removed: postId={}, currentEmpathy={}", postId, post.getEmpathy());
+        // Redis 이벤트 발행 (비동기 미션 업데이트)
+        ContestEmpathyEvent event = ContestEmpathyEvent.deleteEvent(
+                postId, userId, previousCount, newCount);
+        challengeEventPublisher.publishContestEmpathyEvent(event);
+
+        log.info("Empathy removed: postId={}, currentEmpathy={}", postId, savedPost.getEmpathy());
     }
 }
