@@ -3,6 +3,7 @@ package io.github.herbpot.miyobackend.domain.challenge.controller;
 import io.github.herbpot.miyobackend.domain.challenge.dto.*;
 import io.github.herbpot.miyobackend.domain.challenge.service.ContestPostService;
 import io.github.herbpot.miyobackend.domain.challenge.service.ContestService;
+import io.github.herbpot.miyobackend.domain.challenge.dto.CommentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -368,18 +369,19 @@ public class ContestController {
 
                     - 시간순 정렬 (오래된 순)
                     - 페이징 지원 (기본 20개)
+                    - 응답 필드: postId, userId, userNickname, createdAt, empathyCount, content, parentPostId
                     """
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "조회 성공",
-                    content = @Content(schema = @Schema(implementation = ContestPostResponse.class))
+                    content = @Content(schema = @Schema(implementation = CommentResponse.class))
             ),
             @ApiResponse(responseCode = "404", description = "제출물을 찾을 수 없음")
     })
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<Page<ContestPostResponse>> getCommentsByPostId(
+    public ResponseEntity<Page<CommentResponse>> getCommentsByPostId(
             @Parameter(description = "제출물 ID", required = true)
             @PathVariable Long postId,
             @Parameter(description = "페이징 정보 (기본 20개, 시간순 정렬)")
@@ -388,7 +390,7 @@ public class ContestController {
 
         log.info("GET /v0/contests/posts/{}/comments - Getting comments: page={}", postId, pageable.getPageNumber());
 
-        Page<ContestPostResponse> comments = contestPostService.getCommentsByPostId(postId, pageable, token);
+        Page<CommentResponse> comments = contestPostService.getCommentsByPostId(postId, pageable, token);
         return ResponseEntity.ok(comments);
     }
 

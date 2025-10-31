@@ -1,6 +1,7 @@
 package io.github.herbpot.miyobackend.domain.challenge.service;
 
 import io.github.herbpot.miyobackend.client.UserServiceClient;
+import io.github.herbpot.miyobackend.domain.challenge.dto.CommentResponse;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestCommentEvent;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestEmpathyEvent;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCommentRequest;
@@ -25,6 +26,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * ContestPostService
@@ -192,7 +195,7 @@ public class ContestPostService {
      *
      * @param postId 제출물 ID
      * @param token Authorization 토큰
-     * @return 제출물 상세 정보
+     * @return 제출물 상세 정보 (댓글 포함)
      */
     @Transactional(readOnly = true)
     public ContestPostResponse getPostById(Long postId, String token) {
@@ -202,7 +205,20 @@ public class ContestPostService {
                 .orElseThrow(() -> new ContestPostNotFoundException(postId));
 
         String userNickname = userServiceClient.getUserNickname(post.getUserId(), token);
-        return ContestPostResponse.fromWithNickname(post, userNickname);
+
+        // 댓글 조회 (페이징 없이 모든 댓글 조회)
+        Pageable pageable = PageRequest.of(0, 100, Sort.by(Sort.Direction.ASC, "createdAt"));
+        Page<ContestPost> commentsPage = contestPostRepository.findCommentsByParentPostId(postId, pageable);
+
+        // 댓글을 CommentResponse로 변환
+        List<CommentResponse> comments = commentsPage.getContent().stream()
+                .map(comment -> {
+                    String commentUserNickname = userServiceClient.getUserNickname(comment.getUserId(), token);
+                    return CommentResponse.from(comment, commentUserNickname);
+                })
+                .toList();
+
+        return ContestPostResponse.withComments(post, userNickname, comments);
     }
 
     /**
@@ -267,14 +283,14 @@ public class ContestPostService {
      * @return 댓글 목록
      */
     @Transactional(readOnly = true)
-    public Page<ContestPostResponse> getCommentsByPostId(Long parentPostId, Pageable pageable, String token) {
+    public Page<CommentResponse> getCommentsByPostId(Long parentPostId, Pageable pageable, String token) {
         log.info("Getting comments: parentPostId={}, page={}", parentPostId, pageable.getPageNumber());
 
         Page<ContestPost> comments = contestPostRepository.findCommentsByParentPostId(parentPostId, pageable);
 
         return comments.map(comment -> {
             String userNickname = userServiceClient.getUserNickname(comment.getUserId(), token);
-            return ContestPostResponse.fromWithNickname(comment, userNickname);
+            return CommentResponse.from(comment, userNickname);
         });
     }
 

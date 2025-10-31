@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 공모전 제출물 응답 DTO
@@ -84,6 +85,11 @@ public class ContestPostResponse {
     private Boolean isEmpathized;
 
     /**
+     * 댓글 목록 (Optional)
+     */
+    private List<CommentResponse> comments;
+
+    /**
      * ContestPost Entity로부터 ContestPostResponse 생성
      */
     public static ContestPostResponse from(ContestPost contestPost) {
@@ -117,6 +123,15 @@ public class ContestPostResponse {
     public static ContestPostResponse withEmpathy(ContestPost contestPost, String userNickname, Boolean isEmpathized) {
         ContestPostResponse response = fromWithNickname(contestPost, userNickname);
         response.isEmpathized = isEmpathized;
+        return response;
+    }
+
+    /**
+     * 댓글 목록을 포함한 ContestPostResponse 생성
+     */
+    public static ContestPostResponse withComments(ContestPost contestPost, String userNickname, List<CommentResponse> comments) {
+        ContestPostResponse response = fromWithNickname(contestPost, userNickname);
+        response.comments = comments;
         return response;
     }
 }
