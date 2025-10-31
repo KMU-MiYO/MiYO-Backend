@@ -12,8 +12,8 @@ import io.github.herbpot.miyobackend.domain.challenge.repository.UserMissionProg
 // import io.github.herbpot.miyobackend.domain.community.dto.CommentEvent;
 // import io.github.herbpot.miyobackend.domain.community.dto.EmpathyEvent;
 // import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,13 +28,24 @@ import java.util.List;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MissionEventSubscriber {
 
     private final ObjectMapper challengeObjectMapper;
     private final MissionRepository missionRepository;
     private final UserMissionProgressRepository userMissionProgressRepository;
     // private final NotificationService notificationService; // 향후 추가
+
+    /**
+     * Constructor with @Qualifier for ObjectMapper injection
+     */
+    public MissionEventSubscriber(
+            @Qualifier("challengeObjectMapper") ObjectMapper challengeObjectMapper,
+            MissionRepository missionRepository,
+            UserMissionProgressRepository userMissionProgressRepository) {
+        this.challengeObjectMapper = challengeObjectMapper;
+        this.missionRepository = missionRepository;
+        this.userMissionProgressRepository = userMissionProgressRepository;
+    }
 
     /**
      * Redis 메시지 수신 핸들러

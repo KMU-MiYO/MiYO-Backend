@@ -1,6 +1,7 @@
 package io.github.herbpot.miyobackend.domain.challenge.config;
 
 import io.github.herbpot.miyobackend.domain.challenge.service.MissionEventSubscriber;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -43,7 +44,7 @@ public class MissionRedisConfig {
      */
     @Bean
     public RedisMessageListenerContainer missionRedisMessageListenerContainer(
-            RedisConnectionFactory challengeRedisConnectionFactory,
+            @Qualifier("challengeRedisConnectionFactory") RedisConnectionFactory challengeRedisConnectionFactory,
             MessageListenerAdapter missionMessageListenerAdapter,
             // Challenge Domain 토픽 (현재 브랜치에서 사용 가능)
             ChannelTopic contestPostEventsTopic,

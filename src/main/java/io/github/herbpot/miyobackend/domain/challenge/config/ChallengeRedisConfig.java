@@ -3,6 +3,7 @@ package io.github.herbpot.miyobackend.domain.challenge.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -68,8 +69,8 @@ public class ChallengeRedisConfig {
      */
     @Bean(name = "challengeEventRedisTemplate")
     public RedisTemplate<String, Object> challengeEventRedisTemplate(
-            RedisConnectionFactory challengeRedisConnectionFactory,
-            ObjectMapper challengeObjectMapper) {
+            @Qualifier("challengeRedisConnectionFactory") RedisConnectionFactory challengeRedisConnectionFactory,
+            @Qualifier("challengeObjectMapper") ObjectMapper challengeObjectMapper) {
 
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(challengeRedisConnectionFactory);

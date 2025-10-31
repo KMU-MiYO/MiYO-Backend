@@ -3,8 +3,8 @@ package io.github.herbpot.miyobackend.domain.challenge.service;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestCommentEvent;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestEmpathyEvent;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostEvent;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
@@ -17,13 +17,26 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ChallengeEventPublisher {
 
     private final RedisTemplate<String, Object> challengeEventRedisTemplate;
     private final ChannelTopic contestPostEventsTopic;
     private final ChannelTopic contestCommentEventsTopic;
     private final ChannelTopic contestEmpathyEventsTopic;
+
+    /**
+     * Constructor with @Qualifier for RedisTemplate injection
+     */
+    public ChallengeEventPublisher(
+            @Qualifier("challengeEventRedisTemplate") RedisTemplate<String, Object> challengeEventRedisTemplate,
+            ChannelTopic contestPostEventsTopic,
+            ChannelTopic contestCommentEventsTopic,
+            ChannelTopic contestEmpathyEventsTopic) {
+        this.challengeEventRedisTemplate = challengeEventRedisTemplate;
+        this.contestPostEventsTopic = contestPostEventsTopic;
+        this.contestCommentEventsTopic = contestCommentEventsTopic;
+        this.contestEmpathyEventsTopic = contestEmpathyEventsTopic;
+    }
 
     /**
      * Contest 제출물 생성 이벤트 발행
