@@ -9,12 +9,14 @@ import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostCreateReque
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostEvent;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostResponse;
 import io.github.herbpot.miyobackend.domain.challenge.dto.ContestPostSummaryResponse;
+import io.github.herbpot.miyobackend.domain.challenge.entity.ContestEmpathy;
 import io.github.herbpot.miyobackend.domain.challenge.entity.ContestPost;
 import io.github.herbpot.miyobackend.domain.challenge.exception.AlreadySubmittedException;
 import io.github.herbpot.miyobackend.domain.challenge.exception.ContestNotFoundException;
 import io.github.herbpot.miyobackend.domain.challenge.exception.ContestPostNotFoundException;
 import io.github.herbpot.miyobackend.domain.challenge.exception.NotParticipantException;
 import io.github.herbpot.miyobackend.domain.challenge.repository.ContestDataRepository;
+import io.github.herbpot.miyobackend.domain.challenge.repository.ContestEmpathyRepository;
 import io.github.herbpot.miyobackend.domain.challenge.repository.ContestPostRepository;
 import io.github.herbpot.miyobackend.domain.challenge.repository.ContestUserRepository;
 import io.github.herbpot.miyobackend.domain.challenge.validator.MissionValidatorFactory;
@@ -47,6 +49,7 @@ public class ContestPostService {
     private final ContestPostRepository contestPostRepository;
     private final ContestDataRepository contestDataRepository;
     private final ContestUserRepository contestUserRepository;
+    private final ContestEmpathyRepository contestEmpathyRepository;
     private final UserServiceClient userServiceClient;
     private final MissionValidatorFactory missionValidatorFactory;
     private final io.github.herbpot.miyobackend.client.NCPObjectStorageClient ncpObjectStorageClient;
@@ -370,6 +373,9 @@ public class ContestPostService {
 
     /**
      * 공감 추가
+     * - 중복 공감 방지
+     * - ContestEmpathy 테이블에 기록
+     * - ContestPost의 empathy 카운트 증가
      *
      * @param postId 제출물 ID
      * @param userId 사용자 ID
@@ -378,9 +384,24 @@ public class ContestPostService {
     public void addEmpathy(Long postId, String userId) {
         log.info("Adding empathy: postId={}, userId={}", postId, userId);
 
+        // 게시물 존재 확인
         ContestPost post = contestPostRepository.findById(postId)
                 .orElseThrow(() -> new ContestPostNotFoundException(postId));
 
+        // 중복 공감 체크
+        if (contestEmpathyRepository.existsByUserIdAndPostId(userId, postId)) {
+            log.warn("User {} already empathized post {}", userId, postId);
+            throw new IllegalStateException("이미 공감한 게시물입니다.");
+        }
+
+        // ContestEmpathy 레코드 생성
+        ContestEmpathy empathy = ContestEmpathy.builder()
+                .userId(userId)
+                .postId(postId)
+                .build();
+        contestEmpathyRepository.save(empathy);
+
+        // ContestPost의 empathy 카운트 증가 (캐시)
         Integer previousCount = post.getEmpathy();
         post.incrementEmpathy();
         ContestPost savedPost = contestPostRepository.save(post);
@@ -407,6 +428,8 @@ public class ContestPostService {
 
     /**
      * 공감 취소
+     * - ContestEmpathy 테이블에서 삭제
+     * - ContestPost의 empathy 카운트 감소
      *
      * @param postId 제출물 ID
      * @param userId 사용자 ID
@@ -415,9 +438,20 @@ public class ContestPostService {
     public void removeEmpathy(Long postId, String userId) {
         log.info("Removing empathy: postId={}, userId={}", postId, userId);
 
+        // 게시물 존재 확인
         ContestPost post = contestPostRepository.findById(postId)
                 .orElseThrow(() -> new ContestPostNotFoundException(postId));
 
+        // 공감 여부 확인
+        if (!contestEmpathyRepository.existsByUserIdAndPostId(userId, postId)) {
+            log.warn("User {} has not empathized post {}", userId, postId);
+            throw new IllegalStateException("공감하지 않은 게시물입니다.");
+        }
+
+        // ContestEmpathy 레코드 삭제
+        contestEmpathyRepository.deleteByUserIdAndPostId(userId, postId);
+
+        // ContestPost의 empathy 카운트 감소 (캐시)
         Integer previousCount = post.getEmpathy();
         post.decrementEmpathy();
         ContestPost savedPost = contestPostRepository.save(post);
@@ -429,5 +463,50 @@ public class ContestPostService {
         challengeEventPublisher.publishContestEmpathyEvent(event);
 
         log.info("Empathy removed: postId={}, currentEmpathy={}", postId, savedPost.getEmpathy());
+    }
+
+    /**
+     * 특정 게시물의 실제 공감 개수 조회 (DB에서 직접 COUNT)
+     * - ContestPost의 empathy 필드와 동기화가 필요한 경우 사용
+     *
+     * @param postId 게시물 ID
+     * @return 실제 공감 개수
+     */
+    @Transactional(readOnly = true)
+    public Long getActualEmpathyCount(Long postId) {
+        return contestEmpathyRepository.countByPostId(postId);
+    }
+
+    /**
+     * 게시물의 empathy 카운트를 실제 DB 값으로 동기화
+     * - 데이터 불일치가 발생한 경우 수동으로 복구할 때 사용
+     *
+     * @param postId 게시물 ID
+     */
+    @Transactional
+    public void syncEmpathyCount(Long postId) {
+        log.info("Syncing empathy count for postId={}", postId);
+
+        ContestPost post = contestPostRepository.findById(postId)
+                .orElseThrow(() -> new ContestPostNotFoundException(postId));
+
+        Long actualCount = contestEmpathyRepository.countByPostId(postId);
+
+        // empathy 필드를 직접 수정할 수 없으므로, 차이만큼 증가/감소
+        int currentCount = post.getEmpathy();
+        int diff = actualCount.intValue() - currentCount;
+
+        if (diff > 0) {
+            for (int i = 0; i < diff; i++) {
+                post.incrementEmpathy();
+            }
+        } else if (diff < 0) {
+            for (int i = 0; i < Math.abs(diff); i++) {
+                post.decrementEmpathy();
+            }
+        }
+
+        contestPostRepository.save(post);
+        log.info("Empathy count synced: postId={}, before={}, after={}", postId, currentCount, actualCount);
     }
 }
