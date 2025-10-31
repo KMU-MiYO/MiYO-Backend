@@ -51,6 +51,24 @@ public interface ContestPostRepository extends JpaRepository<ContestPost, Long> 
     Page<ContestPost> findCommentsByParentPostId(@Param("parentPostId") Long parentPostId, Pageable pageable);
 
     /**
+     * 특정 제출물의 댓글 목록 조회 (페이징 없이 전체 조회)
+     *
+     * @param parentPostId 부모 제출물 ID
+     * @return 댓글 목록
+     */
+    @Query("SELECT cp FROM ContestPost cp WHERE cp.parentPostId = :parentPostId ORDER BY cp.createdAt ASC")
+    List<ContestPost> findCommentsByParentPostIdWithoutPaging(@Param("parentPostId") Long parentPostId);
+
+    /**
+     * 여러 댓글의 대댓글을 한 번에 조회 (N+1 문제 방지)
+     *
+     * @param parentPostIds 부모 댓글 ID 목록
+     * @return 대댓글 목록
+     */
+    @Query("SELECT cp FROM ContestPost cp WHERE cp.parentPostId IN :parentPostIds ORDER BY cp.parentPostId ASC, cp.createdAt ASC")
+    List<ContestPost> findRepliesByParentPostIds(@Param("parentPostIds") List<Long> parentPostIds);
+
+    /**
      * 특정 공모전에서 사용자의 제출물 조회 (1인 1제출 확인용)
      *
      * @param contestId 공모전 ID

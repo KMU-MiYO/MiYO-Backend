@@ -27,7 +27,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * ContestPostService
@@ -292,6 +297,75 @@ public class ContestPostService {
             String userNickname = userServiceClient.getUserNickname(comment.getUserId(), token);
             return CommentResponse.from(comment, userNickname);
         });
+    }
+
+    /**
+     * 댓글 및 대댓글 계층 구조로 조회 (페이징 없이 전체 조회)
+     *
+     * @param parentPostId 부모 제출물 ID
+     * @param token Authorization 토큰
+     * @return 댓글 목록 (대댓글 포함)
+     */
+    @Transactional(readOnly = true)
+    public List<CommentResponse> getCommentsWithReplies(Long parentPostId, String token) {
+        log.info("Getting comments with replies: parentPostId={}", parentPostId);
+
+        // 1. 최상위 댓글 조회
+        List<ContestPost> comments = contestPostRepository.findCommentsByParentPostIdWithoutPaging(parentPostId);
+
+        if (comments.isEmpty()) {
+            log.info("No comments found for parentPostId={}", parentPostId);
+            return List.of();
+        }
+
+        // 2. 댓글 ID 목록 추출
+        List<Long> commentIds = comments.stream()
+                .map(ContestPost::getId)
+                .toList();
+
+        // 3. 모든 대댓글 일괄 조회 (N+1 문제 방지)
+        List<ContestPost> replies = contestPostRepository.findRepliesByParentPostIds(commentIds);
+
+        // 4. 댓글 ID별로 대댓글 그룹화
+        Map<Long, List<ContestPost>> repliesMap = replies.stream()
+                .collect(Collectors.groupingBy(ContestPost::getParentPostId));
+
+        // 5. 모든 사용자 ID 수집 (댓글 + 대댓글)
+        Set<String> allUserIds = new HashSet<>();
+        comments.forEach(comment -> allUserIds.add(comment.getUserId()));
+        replies.forEach(reply -> allUserIds.add(reply.getUserId()));
+
+        // 6. 사용자 닉네임 일괄 조회 (캐싱 효과)
+        Map<String, String> userNicknameMap = new HashMap<>();
+        for (String userId : allUserIds) {
+            try {
+                String nickname = userServiceClient.getUserNickname(userId, token);
+                userNicknameMap.put(userId, nickname);
+            } catch (Exception e) {
+                log.warn("Failed to get nickname for userId={}: {}", userId, e.getMessage());
+                userNicknameMap.put(userId, "알 수 없음");
+            }
+        }
+
+        // 7. CommentResponse 생성 (댓글 + 대댓글 계층 구조)
+        return comments.stream()
+                .map(comment -> {
+                    // 해당 댓글의 대댓글 목록 가져오기
+                    List<ContestPost> commentReplies = repliesMap.getOrDefault(comment.getId(), List.of());
+
+                    // 대댓글을 CommentResponse로 변환
+                    List<CommentResponse> replyResponses = commentReplies.stream()
+                            .map(reply -> {
+                                String replyNickname = userNicknameMap.get(reply.getUserId());
+                                return CommentResponse.from(reply, replyNickname);
+                            })
+                            .toList();
+
+                    // 댓글을 CommentResponse로 변환 (대댓글 포함)
+                    String commentNickname = userNicknameMap.get(comment.getUserId());
+                    return CommentResponse.from(comment, commentNickname, replyResponses);
+                })
+                .toList();
     }
 
     /**

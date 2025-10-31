@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 댓글 응답 DTO
@@ -54,6 +56,12 @@ public class CommentResponse {
     private Long parentPostId;
 
     /**
+     * 대댓글 목록
+     */
+    @Builder.Default
+    private List<CommentResponse> replies = new ArrayList<>();
+
+    /**
      * ContestPost Entity로부터 CommentResponse 생성
      *
      * @param contestPost 댓글 엔티티
@@ -69,6 +77,28 @@ public class CommentResponse {
                 .empathyCount(contestPost.getEmpathy())
                 .content(contestPost.getContent())
                 .parentPostId(contestPost.getParentPostId())
+                .replies(new ArrayList<>())
+                .build();
+    }
+
+    /**
+     * ContestPost Entity로부터 CommentResponse 생성 (대댓글 포함)
+     *
+     * @param contestPost 댓글 엔티티
+     * @param userNickname 사용자 닉네임
+     * @param replies 대댓글 목록
+     * @return CommentResponse
+     */
+    public static CommentResponse from(ContestPost contestPost, String userNickname, List<CommentResponse> replies) {
+        return CommentResponse.builder()
+                .postId(contestPost.getId())
+                .userId(contestPost.getUserId())
+                .userNickname(userNickname)
+                .createdAt(contestPost.getCreatedAt())
+                .empathyCount(contestPost.getEmpathy())
+                .content(contestPost.getContent())
+                .parentPostId(contestPost.getParentPostId())
+                .replies(replies != null ? replies : new ArrayList<>())
                 .build();
     }
 }

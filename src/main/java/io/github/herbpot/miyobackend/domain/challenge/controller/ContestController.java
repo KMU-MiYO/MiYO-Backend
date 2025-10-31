@@ -381,17 +381,16 @@ public class ContestController {
             @ApiResponse(responseCode = "404", description = "제출물을 찾을 수 없음")
     })
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<Page<CommentResponse>> getCommentsByPostId(
+    public ResponseEntity<CommentsListResponse> getCommentsByPostId(
             @Parameter(description = "제출물 ID", required = true)
             @PathVariable Long postId,
-            @Parameter(description = "페이징 정보 (기본 20개, 시간순 정렬)")
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable,
             @Parameter(hidden = true) @RequestHeader("Authorization") String token) {
 
-        log.info("GET /v0/contests/posts/{}/comments - Getting comments: page={}", postId, pageable.getPageNumber());
+        log.info("GET /v0/contests/posts/{}/comments - Getting comments with replies", postId);
 
-        Page<CommentResponse> comments = contestPostService.getCommentsByPostId(postId, pageable, token);
-        return ResponseEntity.ok(comments);
+        List<CommentResponse> comments = contestPostService.getCommentsWithReplies(postId, token);
+        CommentsListResponse response = CommentsListResponse.from(comments);
+        return ResponseEntity.ok(response);
     }
 
     /**
