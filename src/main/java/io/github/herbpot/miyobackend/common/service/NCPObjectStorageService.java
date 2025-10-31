@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import java.io.IOException;
 import java.util.Base64;
@@ -170,6 +171,43 @@ public class NCPObjectStorageService {
             case "image/webp" -> ".webp";
             default -> ".png";
         };
+    }
+
+    /**
+     * 이미지 다운로드 (CORS 우회용 프록시)
+     *
+     * @param imagePath 이미지 경로 (전체 URL 또는 Object Storage Key)
+     * @return 이미지 바이트 배열
+     */
+    public byte[] downloadImage(String imagePath) {
+        try {
+            // URL 형식이면 Key 추출, 아니면 그대로 사용
+            String key = imagePath.contains("://") ? extractKeyFromUrl(imagePath) : imagePath;
+
+            log.info("Downloading image from NCP Object Storage: key={}", key);
+
+            // S3에서 객체 다운로드
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build();
+
+            // InputStream을 byte[]로 변환
+            byte[] imageBytes = s3Client.getObject(getObjectRequest).readAllBytes();
+
+            log.info("Image downloaded successfully: key={}, size={} bytes", key, imageBytes.length);
+            return imageBytes;
+
+        } catch (NoSuchKeyException e) {
+            log.error("Image not found in NCP Object Storage: {}", imagePath, e);
+            throw new RuntimeException("이미지를 찾을 수 없습니다: " + imagePath, e);
+        } catch (S3Exception e) {
+            log.error("Failed to download image from NCP: {}", imagePath, e);
+            throw new RuntimeException("이미지 다운로드 실패: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Unexpected error while downloading image: {}", imagePath, e);
+            throw new RuntimeException("이미지 다운로드 중 오류 발생", e);
+        }
     }
 
     /**

@@ -3,6 +3,8 @@ package io.github.herbpot.miyobackend.common.controller;
 import io.github.herbpot.miyobackend.common.dto.*;
 import io.github.herbpot.miyobackend.common.service.GeminiImageService;
 import io.github.herbpot.miyobackend.common.service.NCPObjectStorageService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -182,6 +184,96 @@ public class ImageController {
             log.error("Image generation from image or upload failed: userId={}, error={}",
                     userId, response.getErrorMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * NCP Object Storage 이미지 다운로드 (CORS 우회용 프록시)
+     * - Flutter Web에서 직접 접근 시 CORS 문제 발생하므로 백엔드를 경유
+     *
+     * @param request 이미지 경로 요청
+     * @return 이미지 바이너리 데이터 (200 OK)
+     */
+    @Operation(
+            summary = "이미지 다운로드 (CORS 우회)",
+            description = """
+                    NCP Object Storage에서 이미지를 다운로드합니다.
+
+                    - Flutter Web CORS 문제 해결을 위한 프록시 API
+                    - 전체 URL 또는 Object Storage Key 모두 지원
+                    - 이미지 바이너리 데이터를 직접 반환
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "다운로드 성공",
+                    content = @Content(mediaType = "image/*")
+            ),
+            @ApiResponse(responseCode = "400", description = "잘못된 이미지 경로"),
+            @ApiResponse(responseCode = "404", description = "이미지를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "다운로드 실패")
+    })
+    @PostMapping("/download")
+    public ResponseEntity<byte[]> downloadImage(
+            @Valid @RequestBody ImageDownloadRequest request) {
+
+        try {
+            log.info("POST /v0/images/download - Downloading image: path={}", request.getImagePath());
+
+            // NCP Object Storage에서 이미지 다운로드
+            byte[] imageBytes = ncpObjectStorageService.downloadImage(request.getImagePath());
+
+            // Content-Type 결정 (파일 확장자 기반)
+            String contentType = determineContentType(request.getImagePath());
+
+            // HTTP 헤더 설정
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(contentType));
+            headers.setContentLength(imageBytes.length);
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "inline"); // 브라우저에서 직접 표시
+            headers.set(HttpHeaders.CACHE_CONTROL, "public, max-age=31536000"); // 1년 캐싱
+
+            log.info("Image downloaded successfully: path={}, size={} bytes, contentType={}",
+                    request.getImagePath(), imageBytes.length, contentType);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(imageBytes);
+
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid image path: {}", request.getImagePath(), e);
+            return ResponseEntity.badRequest().build();
+
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("찾을 수 없습니다")) {
+                log.error("Image not found: {}", request.getImagePath(), e);
+                return ResponseEntity.notFound().build();
+            }
+
+            log.error("Failed to download image: {}", request.getImagePath(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 파일 확장자에 따른 Content-Type 결정
+     */
+    private String determineContentType(String imagePath) {
+        String lowerPath = imagePath.toLowerCase();
+
+        if (lowerPath.endsWith(".png")) {
+            return "image/png";
+        } else if (lowerPath.endsWith(".jpg") || lowerPath.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else if (lowerPath.endsWith(".gif")) {
+            return "image/gif";
+        } else if (lowerPath.endsWith(".webp")) {
+            return "image/webp";
+        } else if (lowerPath.endsWith(".svg")) {
+            return "image/svg+xml";
+        } else {
+            return "application/octet-stream";
         }
     }
 
