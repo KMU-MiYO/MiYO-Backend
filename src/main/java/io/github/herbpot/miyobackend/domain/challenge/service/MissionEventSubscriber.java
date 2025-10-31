@@ -12,6 +12,7 @@ import io.github.herbpot.miyobackend.domain.challenge.repository.UserMissionProg
 import io.github.herbpot.miyobackend.domain.community.dto.CommentEvent;
 import io.github.herbpot.miyobackend.domain.community.dto.EmpathyEvent;
 import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
+import io.github.herbpot.miyobackend.client.UserServiceClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class MissionEventSubscriber {
     private final ObjectMapper challengeObjectMapper;
     private final MissionRepository missionRepository;
     private final UserMissionProgressRepository userMissionProgressRepository;
+    private final UserServiceClient userServiceClient;
     // private final NotificationService notificationService; // 향후 추가
 
     /**
@@ -41,10 +43,12 @@ public class MissionEventSubscriber {
     public MissionEventSubscriber(
             @Qualifier("challengeObjectMapper") ObjectMapper challengeObjectMapper,
             MissionRepository missionRepository,
-            UserMissionProgressRepository userMissionProgressRepository) {
+            UserMissionProgressRepository userMissionProgressRepository,
+            UserServiceClient userServiceClient) {
         this.challengeObjectMapper = challengeObjectMapper;
         this.missionRepository = missionRepository;
         this.userMissionProgressRepository = userMissionProgressRepository;
+        this.userServiceClient = userServiceClient;
     }
 
     /**
@@ -239,7 +243,7 @@ public class MissionEventSubscriber {
 
     /**
      * 미션 완료 처리
-     * - 리워드 지급 (향후 구현)
+     * - 리워드 지급
      * - 알림 발송 (향후 구현)
      * - 로그 기록
      */
@@ -247,8 +251,18 @@ public class MissionEventSubscriber {
         log.info("[Mission] 🎉 Mission completed! missionId={}, userId={}, title={}, rewardPoints={}",
                 mission.getMissionId(), userId, mission.getTitle(), mission.getRewardPoints());
 
-        // TODO: 리워드 지급
-        // rewardService.addReward(userId, mission.getRewardPoints());
+        // 리워드 지급
+        try {
+            userServiceClient.addReward(userId, mission.getRewardPoints());
+            log.info("[Mission] Reward granted successfully: userId={}, rewardPoints={}",
+                    userId, mission.getRewardPoints());
+        } catch (Exception e) {
+            // 리워드 지급 실패해도 미션 완료 상태는 유지 (이미 DB에 저장됨)
+            log.error("[Mission] Failed to grant reward (mission still completed): " +
+                            "userId={}, missionId={}, rewardPoints={}, error={}",
+                    userId, mission.getMissionId(), mission.getRewardPoints(), e.getMessage(), e);
+            // 실패 시 재시도 로직이나 Dead Letter Queue 사용 고려 (향후 개선)
+        }
 
         // TODO: 알림 발송
         // notificationService.sendMissionCompletionNotification(userId, mission);

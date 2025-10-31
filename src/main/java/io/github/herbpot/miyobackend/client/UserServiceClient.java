@@ -1,5 +1,6 @@
 package io.github.herbpot.miyobackend.client;
 
+import io.github.herbpot.miyobackend.client.dto.RewardRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,6 +62,45 @@ public class UserServiceClient {
         } catch (Exception e) {
             log.error("Failed to fetch user info from user-service: userId={}", userId, e);
             return "Unknown";
+        }
+    }
+
+    /**
+     * 리워드 지급
+     * @param userId 사용자 ID
+     * @param rewardPoints 지급할 리워드 포인트
+     * @throws Exception 리워드 지급 실패 시 예외 발생
+     */
+    public void addReward(String userId, Integer rewardPoints) {
+        try {
+            String url = userServiceUrl + "/v0/reward/insert";
+            log.info("[UserServiceClient] Adding reward: userId={}, rewardPoints={}", userId, rewardPoints);
+
+            // 요청 본문 생성
+            RewardRequest request = RewardRequest.builder()
+                    .userId(userId)
+                    .reward(rewardPoints)
+                    .build();
+
+            // HTTP POST 요청
+            ResponseEntity<Void> responseEntity = restTemplate.postForEntity(
+                    url,
+                    request,
+                    Void.class
+            );
+
+            if (responseEntity.getStatusCode().is2xxSuccessful()) {
+                log.info("[UserServiceClient] Reward added successfully: userId={}, rewardPoints={}",
+                        userId, rewardPoints);
+            } else {
+                log.error("[UserServiceClient] Failed to add reward: userId={}, statusCode={}",
+                        userId, responseEntity.getStatusCode());
+                throw new RuntimeException("Failed to add reward: status=" + responseEntity.getStatusCode());
+            }
+        } catch (Exception e) {
+            log.error("[UserServiceClient] Failed to add reward: userId={}, rewardPoints={}, error={}",
+                    userId, rewardPoints, e.getMessage(), e);
+            throw e; // 상위 레이어에서 에러 핸들링
         }
     }
 
