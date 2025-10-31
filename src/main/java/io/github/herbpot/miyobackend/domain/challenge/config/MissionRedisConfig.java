@@ -46,14 +46,14 @@ public class MissionRedisConfig {
     public RedisMessageListenerContainer missionRedisMessageListenerContainer(
             @Qualifier("challengeRedisConnectionFactory") RedisConnectionFactory challengeRedisConnectionFactory,
             MessageListenerAdapter missionMessageListenerAdapter,
-            // Challenge Domain 토픽 (현재 브랜치에서 사용 가능)
+            // Challenge Domain 토픽
             ChannelTopic contestPostEventsTopic,
             ChannelTopic contestCommentEventsTopic,
-            ChannelTopic contestEmpathyEventsTopic
-            // Community Domain 토픽 (posts/main 병합 후 활성화)
-            // ChannelTopic postEventsTopic,
-            // ChannelTopic commentEventsTopic,
-            // ChannelTopic empathyEventsTopic
+            ChannelTopic contestEmpathyEventsTopic,
+            // Community Domain 토픽 (posts/main 서버와 공유)
+            ChannelTopic postEventsTopic,
+            ChannelTopic commentEventsTopic,
+            ChannelTopic empathyEventsTopic
     ) {
 
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
@@ -64,10 +64,10 @@ public class MissionRedisConfig {
         container.addMessageListener(missionMessageListenerAdapter, contestCommentEventsTopic);
         container.addMessageListener(missionMessageListenerAdapter, contestEmpathyEventsTopic);
 
-        // Community Domain 3개 토픽 구독 (posts/main 병합 후 주석 해제)
-        // container.addMessageListener(missionMessageListenerAdapter, postEventsTopic);
-        // container.addMessageListener(missionMessageListenerAdapter, commentEventsTopic);
-        // container.addMessageListener(missionMessageListenerAdapter, empathyEventsTopic);
+        // Community Domain 3개 토픽 구독 (posts/main 서버와 공유)
+        container.addMessageListener(missionMessageListenerAdapter, postEventsTopic);
+        container.addMessageListener(missionMessageListenerAdapter, commentEventsTopic);
+        container.addMessageListener(missionMessageListenerAdapter, empathyEventsTopic);
 
         return container;
     }

@@ -8,10 +8,10 @@ import io.github.herbpot.miyobackend.domain.challenge.entity.Mission;
 import io.github.herbpot.miyobackend.domain.challenge.entity.UserMissionProgress;
 import io.github.herbpot.miyobackend.domain.challenge.repository.MissionRepository;
 import io.github.herbpot.miyobackend.domain.challenge.repository.UserMissionProgressRepository;
-// Community Domain 이벤트 (posts/main 병합 후 활성화)
-// import io.github.herbpot.miyobackend.domain.community.dto.CommentEvent;
-// import io.github.herbpot.miyobackend.domain.community.dto.EmpathyEvent;
-// import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
+// Community Domain 이벤트 (posts/main 서버와 공유)
+import io.github.herbpot.miyobackend.domain.community.dto.CommentEvent;
+import io.github.herbpot.miyobackend.domain.community.dto.EmpathyEvent;
+import io.github.herbpot.miyobackend.domain.community.dto.PostEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -55,8 +55,7 @@ public class MissionEventSubscriber {
         try {
             log.info("[MissionEventSubscriber] Received message: {}", message);
 
-            // Community Domain 이벤트 처리 (posts/main 병합 후 활성화)
-            /*
+            // Community Domain 이벤트 처리 (posts/main 서버와 공유)
             // 1️⃣ Community: PostEvent (게시글 생성)
             if (message.contains("\"postId\"") &&
                 message.contains("\"parentPostId\":null") &&
@@ -79,10 +78,7 @@ public class MissionEventSubscriber {
                 handleEmpathyEvent(event);
             }
             // 4️⃣ Challenge: ContestPostEvent (제출물 생성)
-            else */
-
-            // 4️⃣ Challenge: ContestPostEvent (제출물 생성)
-            if (message.contains("\"contestPostId\"") &&
+            else if (message.contains("\"contestPostId\"") &&
                 message.contains("\"contestId\"") &&
                 message.contains("\"parentPostId\":null")) {
                 ContestPostEvent event = challengeObjectMapper.readValue(message, ContestPostEvent.class);
@@ -112,9 +108,8 @@ public class MissionEventSubscriber {
         }
     }
 
-    // ========== Community Domain 이벤트 핸들러 (posts/main 병합 후 활성화) ==========
+    // ========== Community Domain 이벤트 핸들러 (posts/main 서버와 공유) ==========
 
-    /*
     @Transactional
     public void handlePostEvent(PostEvent event) {
         if (event.getEventType() == PostEvent.EventType.CREATE) {
@@ -141,7 +136,6 @@ public class MissionEventSubscriber {
             updateMissionProgress(event.getUserId(), "empathy");
         }
     }
-    */
 
     // ========== Challenge Domain 이벤트 핸들러 ==========
 

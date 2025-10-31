@@ -31,6 +31,16 @@ public class ChallengeRedisConfig {
     @Value("${app.redis.topic.contest-empathy-events:contest-empathy-events-channel}")
     private String contestEmpathyEventsTopic;
 
+    // Community Domain 토픽 (posts/main 서버와 공유)
+    @Value("${app.redis.topic.post-events:post-events-channel}")
+    private String postEventsTopic;
+
+    @Value("${app.redis.topic.comment-events:comment-events-channel}")
+    private String commentEventsTopic;
+
+    @Value("${app.redis.topic.empathy-events:empathy-events-channel}")
+    private String empathyEventsTopic;
+
     @Value("${spring.data.redis.host:localhost}")
     private String host;
 
@@ -115,5 +125,34 @@ public class ChallengeRedisConfig {
     @Bean
     public ChannelTopic contestEmpathyEventsTopic() {
         return new ChannelTopic(contestEmpathyEventsTopic);
+    }
+
+    // ========== Community Domain 토픽 정의 (posts/main 서버와 공유) ==========
+
+    /**
+     * Redis 채널 토픽 정의 - Community Post Events
+     * - posts/main 서버의 게시글 생성/수정/삭제 이벤트 구독
+     */
+    @Bean
+    public ChannelTopic postEventsTopic() {
+        return new ChannelTopic(postEventsTopic);
+    }
+
+    /**
+     * Redis 채널 토픽 정의 - Community Comment Events
+     * - posts/main 서버의 댓글 생성/삭제 이벤트 구독
+     */
+    @Bean
+    public ChannelTopic commentEventsTopic() {
+        return new ChannelTopic(commentEventsTopic);
+    }
+
+    /**
+     * Redis 채널 토픽 정의 - Community Empathy Events
+     * - posts/main 서버의 공감 추가/취소 이벤트 구독
+     */
+    @Bean
+    public ChannelTopic empathyEventsTopic() {
+        return new ChannelTopic(empathyEventsTopic);
     }
 }
